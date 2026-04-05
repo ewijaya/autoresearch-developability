@@ -51,17 +51,19 @@ python -m src.evaluate --strategy weighted_sum --split val --k 20
 python -m pytest tests/ -v
 ```
 
-### Current benchmark numbers (val split, k=20)
+### Current benchmark numbers (val split, k=20, mean across 3 oracles)
 
 | Strategy | TopK Enrichment | NDCG | Hypervolume | Feasible |
 |---|---|---|---|---|
-| activity_only | 0.10 | 0.71 | 0.29 | 0.00 |
-| toxicity_exclusion | 0.35 | 0.76 | 0.53 | 1.00 |
-| **weighted_sum** | **0.50** | **0.82** | **0.57** | **0.55** |
-| random | 0.00 | 0.43 | 0.43 | 0.15 |
-| rule_only | 0.25 | 0.67 | 0.51 | 0.50 |
+| activity_only | 0.083 | 0.62 | 0.29 | 0.00 |
+| toxicity_exclusion | 0.300 | 0.79 | 0.53 | 1.00 |
+| **weighted_sum** | **0.517** | **0.89** | **0.57** | **0.55** |
+| rule_only | 0.367 | 0.83 | 0.51 | 0.50 |
+| random | 0.017 | 0.52 | 0.43 | 0.15 |
 
 **Candidate pool:** 3,554 antimicrobial peptides from DBAASP (E. coli ATCC 25922).
+**TopK enrichment is the mean across three oracle definitions** (Pareto rank,
+rank product, threshold-gated). See "Benchmark honesty" below.
 
 ## Repository structure
 
@@ -117,13 +119,27 @@ See `program.md` for the full agent operating rules.
 
 ## Metrics
 
-- **Top-k enrichment:** fraction of oracle-top-k candidates captured in the
-  policy's top-k. The oracle uses a multiplicative combination of all four
-  endpoints — intentionally different from any baseline formula. This is a
-  synthetic reference ranking, not a wet-lab gold standard.
-- **NDCG:** normalized discounted cumulative gain vs the oracle ordering
-- **Hypervolume:** dominated area in (activity, 1-toxicity) space for top-k
+- **Top-k enrichment (primary):** mean fraction of oracle-top-k candidates
+  captured in the policy's top-k, **averaged across three independent oracle
+  definitions**. No single oracle can be reverse-engineered to win.
+- **NDCG:** normalized discounted cumulative gain, also averaged across oracles
+- **Hypervolume:** dominated area in (activity, 1−toxicity) space for top-k
 - **Feasible fraction:** share of top-k satisfying all hard constraints
+
+### Oracle ensemble
+
+The benchmark uses three structurally different oracles to define "what
+is a good candidate." Top-k enrichment and NDCG are reported as the
+mean across all three. This prevents an agent from gaming one formula.
+
+| Oracle | Definition | Resists linear approx? |
+|---|---|---|
+| **Pareto rank** | Count of dominating candidates across all 4 endpoints | Yes (combinatorial, no weights) |
+| **Rank product** | Geometric mean of per-endpoint ranks | Partially (nonlinear) |
+| **Threshold gate** | Activity×stability with sigmoid gates on toxicity and dev_penalty | Yes (sharp nonlinearities) |
+
+No single strategy wins all three oracles. `weighted_sum` leads on
+`rank_product` and `threshold_gate` but ties on `pareto_rank`.
 
 ## Benchmark honesty
 
@@ -137,8 +153,9 @@ framework, not about solving peptide drug discovery.
 - **Stability** is predicted by an RF model trained on 375 HLP peptides
   (held-out R² 0.547 — weak; cross-domain generalization is uncertain)
 - **Developability** is a deterministic rule-based score, not empirical
-- The **oracle ranking** used for top-k enrichment is a formula we defined,
-  not a validated clinical ordering
+- The **oracle definitions** are design choices, not biological truth.
+  We mitigate this by using three structurally diverse oracles and
+  reporting the mean.
 - Splitting is random (mmseqs2 cluster-aware splitting is supported but
   not yet installed)
 

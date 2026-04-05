@@ -81,16 +81,20 @@ The following baselines must exist before the loop starts:
 ## Evaluation metrics
 
 **Keep/discard metric hierarchy (LOCKED):**
-1. **top-k enrichment** — primary summary metric for keep/discard decisions
-2. **NDCG** — secondary; reported but not the first-line decision target
+1. **top-k enrichment** — primary summary metric for keep/discard decisions.
+   This is the **mean enrichment across three oracle definitions** (Pareto
+   rank, rank product, threshold-gated). No single oracle can be gamed.
+2. **NDCG** — secondary; also averaged across oracles
 3. **hypervolume** — diagnostic only; useful for understanding trade-offs,
    not for keep/discard gating
+
+The per-oracle enrichment breakdown is logged in results.tsv for
+diagnostics. Focus on the mean.
 
 Other reported metrics:
 - fraction of top-k satisfying all hard constraints
 - diversity among top-k (sequence distance)
-- Spearman/Kendall rank correlation where reference rankings exist
-- bootstrap robustness (std across resampled splits)
+- per-oracle enrichment breakdown
 
 ## Iteration budget
 

@@ -146,38 +146,109 @@ def hypervolume_2d(
     return hv
 
 
-def compute_reference_score(df: pd.DataFrame) -> pd.Series:
-    """Compute a composite reference score for ground-truth ranking.
+def _norm(s):
+    """Min-max normalize a Series to [0, 1]."""
+    r = s.max() - s.min()
+    if r < 1e-10:
+        return s * 0.0 + 0.5
+    return (s - s.min()) / r
 
-    This is the 'oracle' ranking that policies are compared against.
 
-    Design: the reference uses a DIFFERENT formula from any baseline
-    strategy to avoid circularity. It is a multiplicative combination
-    that rewards high activity while penalizing constraint violations.
+def _oracle_pareto_rank(df: pd.DataFrame) -> pd.Series:
+    """Oracle A: Pareto dominance rank.
 
-    Formula: activity * feasibility_bonus
-    - feasibility_bonus = 1.0 if all constraints satisfied, else decayed
-    - This ensures the reference prefers active + feasible candidates
-      but does NOT use any specific weight vector that a baseline copies.
+    A candidate dominates another if it is at least as good on all
+    endpoints and strictly better on at least one. The rank is the
+    number of candidates that dominate it (lower = better), inverted
+    to a score (higher = better).
 
-    Higher = better candidate.
+    This oracle has NO parametric formula to reverse-engineer.
     """
-    def _norm(s):
-        r = s.max() - s.min()
-        if r < 1e-10:
-            return s * 0.0 + 0.5
-        return (s - s.min()) / r
+    n = len(df)
+    act = _norm(df["activity"]).values
+    safety = (1.0 - _norm(df["toxicity"])).values
+    stab = _norm(df["stability"]).values
+    devq = (1.0 - _norm(df["dev_penalty"])).values
 
+    # Count how many candidates dominate each one (vectorized)
+    objectives = np.column_stack([act, safety, stab, devq])  # (n, 4)
+    dom_count = np.zeros(n, dtype=int)
+    for i in range(n):
+        # j dominates i if all(obj[j] >= obj[i]) and any(obj[j] > obj[i])
+        geq = objectives >= objectives[i]        # (n, 4) bool
+        gt = objectives > objectives[i]           # (n, 4) bool
+        dominates = geq.all(axis=1) & gt.any(axis=1)  # (n,) bool
+        dominates[i] = False
+        dom_count[i] = dominates.sum()
+
+    # Score = max_dom - dom_count (so less dominated = higher score)
+    max_dom = dom_count.max() if dom_count.max() > 0 else 1
+    scores = (max_dom - dom_count).astype(float)
+    return pd.Series(scores, index=df.index)
+
+
+def _oracle_rank_product(df: pd.DataFrame) -> pd.Series:
+    """Oracle B: Rank product.
+
+    Rank each candidate independently on each endpoint, then take the
+    geometric mean of ranks. Lower geometric mean = better candidate.
+    Inverted to a score (higher = better).
+
+    This has no weight vector to discover — it treats all endpoints
+    as independently important via their rank order.
+    """
+    act_rank = _norm(df["activity"]).rank(ascending=False)
+    tox_rank = _norm(df["toxicity"]).rank(ascending=True)   # lower tox = better
+    stab_rank = _norm(df["stability"]).rank(ascending=False)
+    dev_rank = _norm(df["dev_penalty"]).rank(ascending=True)  # lower penalty = better
+
+    # Geometric mean of ranks (lower = better)
+    geo_mean_rank = (act_rank * tox_rank * stab_rank * dev_rank) ** 0.25
+
+    # Invert: higher score = better candidate
+    score = geo_mean_rank.max() - geo_mean_rank
+    return score
+
+
+def _oracle_threshold_gate(df: pd.DataFrame) -> pd.Series:
+    """Oracle C: Threshold-gated activity.
+
+    Candidates must pass hard filters on toxicity and developability,
+    then are ranked by activity * stability. Candidates failing any
+    gate get a steep penalty but are not fully zeroed out (to keep
+    NDCG well-behaved).
+
+    This oracle tests whether the policy respects hard constraints
+    while optimizing the remaining objectives.
+    """
     act = _norm(df["activity"])
+    tox = _norm(df["toxicity"])
+    stab = _norm(df["stability"])
+    dev = _norm(df["dev_penalty"])
 
-    # Feasibility: multiplicative penalty for constraint violations
-    # Each constraint contributes a factor in (0, 1]
-    tox_factor = 1.0 - 0.5 * _norm(df["toxicity"])       # less toxic → higher
-    stab_factor = 0.5 + 0.5 * _norm(df["stability"])     # more stable → higher
-    dev_factor = 1.0 - 0.3 * _norm(df["dev_penalty"])    # lower penalty → higher
+    # Gate factors: sharp sigmoid-like penalty near thresholds
+    # Toxicity gate at 0.5 (normalized), dev gate at 0.5 (normalized)
+    tox_gate = 1.0 / (1.0 + np.exp(10 * (tox - 0.5)))
+    dev_gate = 1.0 / (1.0 + np.exp(10 * (dev - 0.5)))
 
-    ref = act * tox_factor * stab_factor * dev_factor
-    return ref
+    score = act * (0.3 + 0.7 * stab) * tox_gate * dev_gate
+    return score
+
+
+# Oracle ensemble: the primary metric is the mean enrichment across all three
+ORACLE_FUNCTIONS = {
+    "pareto_rank": _oracle_pareto_rank,
+    "rank_product": _oracle_rank_product,
+    "threshold_gate": _oracle_threshold_gate,
+}
+
+
+def compute_reference_scores(df: pd.DataFrame) -> dict:
+    """Compute reference scores from all oracle functions.
+
+    Returns dict of {oracle_name: pd.Series of scores}.
+    """
+    return {name: fn(df) for name, fn in ORACLE_FUNCTIONS.items()}
 
 
 def evaluate_ranking(
@@ -187,17 +258,36 @@ def evaluate_ranking(
 ) -> dict:
     """Compute all ranking metrics.
 
+    Primary metric (topk_enrichment) is the MEAN enrichment across all
+    oracle definitions. This prevents gaming any single formula.
+
     Returns dict with metric names and values.
     """
-    ref_scores = compute_reference_score(df)
+    ref_scores_dict = compute_reference_scores(df)
+
+    # Per-oracle enrichment and NDCG
+    enrichments = {}
+    ndcgs = {}
+    for name, ref in ref_scores_dict.items():
+        enrichments[name] = topk_enrichment(ranked_indices, ref, k=k)
+        ndcgs[name] = ndcg(ranked_indices, ref, k=k)
+
+    # Primary metric: mean enrichment across oracles
+    mean_enrich = np.mean(list(enrichments.values()))
+    mean_ndcg = np.mean(list(ndcgs.values()))
 
     metrics = {
-        "topk_enrichment": topk_enrichment(ranked_indices, ref_scores, k=k),
-        "ndcg": ndcg(ranked_indices, ref_scores, k=k),
+        "topk_enrichment": mean_enrich,
+        "ndcg": mean_ndcg,
         "hypervolume": hypervolume_2d(df, ranked_indices, k=k),
         "n_candidates": len(ranked_indices),
         "k": k,
     }
+
+    # Per-oracle breakdown (for diagnostics)
+    for name in enrichments:
+        metrics[f"enrich_{name}"] = enrichments[name]
+        metrics[f"ndcg_{name}"] = ndcgs[name]
 
     # Fraction of top-k satisfying all hard constraints
     topk_idx = ranked_indices[:k]

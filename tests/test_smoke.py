@@ -11,7 +11,7 @@ from src.features import compute_features, is_valid_sequence, sequences_to_featu
 from src.endpoint_dev import score_developability
 from src.endpoint_activity import mic_to_activity_score, normalize_activity
 from src.rank import rank_candidates
-from src.evaluate import compute_reference_score, topk_enrichment, ndcg
+from src.evaluate import compute_reference_scores, topk_enrichment, ndcg
 
 
 # --- Feature extraction ---
@@ -114,26 +114,39 @@ def test_rank_rule_only(sample_df):
 
 
 def test_topk_enrichment_perfect(sample_df):
-    ref = compute_reference_score(sample_df)
+    # Test against one of the oracles
+    refs = compute_reference_scores(sample_df)
+    ref = refs["rank_product"]
     ideal = ref.sort_values(ascending=False).index.tolist()
     enrich = topk_enrichment(ideal, ref, k=3)
     assert enrich == 1.0
 
 
 def test_ndcg_perfect(sample_df):
-    ref = compute_reference_score(sample_df)
+    refs = compute_reference_scores(sample_df)
+    ref = refs["rank_product"]
     ideal = ref.sort_values(ascending=False).index.tolist()
     score = ndcg(ideal, ref, k=3)
     assert abs(score - 1.0) < 1e-6
 
 
 def test_ndcg_random_worse(sample_df):
-    ref = compute_reference_score(sample_df)
+    refs = compute_reference_scores(sample_df)
+    ref = refs["rank_product"]
     ideal = ref.sort_values(ascending=False).index.tolist()
     reversed_order = ideal[::-1]
     score_ideal = ndcg(ideal, ref, k=3)
     score_bad = ndcg(reversed_order, ref, k=3)
     assert score_ideal > score_bad
+
+
+def test_multi_oracle_consistency(sample_df):
+    """All oracles should produce valid scores for any DataFrame."""
+    refs = compute_reference_scores(sample_df)
+    assert len(refs) >= 3
+    for name, scores in refs.items():
+        assert len(scores) == len(sample_df)
+        assert scores.max() > scores.min(), f"Oracle {name} has no spread"
 
 
 # --- Integration test (requires processed data) ---
