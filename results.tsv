@@ -18,3 +18,8 @@ a56cc3d	p3b_more_dev	0.5333	0.5333	0.9364	0.5640	0.8000	533	20	discard	Increase 
 a56cc3d	p3b_less_dev	0.5333	0.5333	0.9364	0.5640	0.8000	533	20	discard	Decrease developability penalty weight from 0.15 to 0.10 while holding other Prompt 3 weights fixed.
 a56cc3d	p3b_capped_dev	0.5500	0.5500	0.9365	0.5640	0.8000	533	20	discard	Cap normalized developability penalty at 0.60 before applying the Prompt 3 weight to avoid over-penalizing already bad sequences.
 a56cc3d	p3b_tox_power_1p5	0.5500	0.5500	0.9402	0.5640	0.7500	533	20	discard	Use a mild nonlinear toxicity penalty nt^1.5 with the Prompt 3 weights to punish highly toxic candidates slightly more strongly.
+3a41c14	activity_only	0.1333	0.1333	0.6504	0.3794	0.0000	533	20	baseline	Baseline activity_only on val
+3a41c14	toxicity_exclusion	0.3000	0.3000	0.8389	0.5170	1.0000	95	20	baseline	Baseline toxicity_exclusion on val
+3a41c14	weighted_sum	0.6500	0.6500	0.9732	0.5284	0.7500	533	20	baseline	Baseline weighted_sum on val
+3a41c14	random	0.0000	0.0000	0.5727	0.3912	0.1000	533	20	baseline	Baseline random on val
+3a41c14	rule_only	0.4167	0.4167	0.9155	0.4859	0.5500	297	20	baseline	Baseline rule_only on val
