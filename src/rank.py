@@ -183,6 +183,69 @@ def _rank_agent_improved(df, **kwargs):
         return fusion_score.sort_values(ascending=False).index.tolist()
 
     try:
+        from src.rank_learnable import score_oracle_mlp
+
+        oracle_mlp_score = score_oracle_mlp(df)
+    except Exception:
+        oracle_mlp_score = None
+
+    if oracle_mlp_score is not None:
+        reranked_shortlist = (
+            df.loc[consensus_shortlist]
+            .assign(
+                oracle_mlp_score=oracle_mlp_score.loc[consensus_shortlist],
+                gate_score=gate_score.loc[consensus_shortlist],
+                pareto_score=pareto_score.loc[consensus_shortlist],
+                rank_product_score=rank_product_score.loc[consensus_shortlist],
+                activity=df.loc[consensus_shortlist, "activity"],
+            )
+            .sort_values(
+                [
+                    "oracle_mlp_score",
+                    "gate_score",
+                    "pareto_score",
+                    "rank_product_score",
+                    "activity",
+                ],
+                ascending=[False, False, False, False, False],
+            )
+            .index.tolist()
+        )
+        remaining_score = _reciprocal_rank_fusion_score(
+            oracle_mlp_score,
+            gate_score,
+            pareto_score,
+        )
+        consensus_set = set(consensus_shortlist)
+        remaining_rank = [
+            idx for idx in remaining_score.sort_values(ascending=False).index
+            if idx not in consensus_set
+        ]
+        combined_rank = reranked_shortlist + remaining_rank
+        final_block = combined_rank[:shortlist_size]
+        reranked_final_block = (
+            df.loc[final_block]
+            .assign(
+                oracle_mlp_score=oracle_mlp_score.loc[final_block],
+                gate_score=gate_score.loc[final_block],
+                pareto_score=pareto_score.loc[final_block],
+                activity=df.loc[final_block, "activity"],
+            )
+            .sort_values(
+                [
+                    "oracle_mlp_score",
+                    "gate_score",
+                    "pareto_score",
+                    "activity",
+                ],
+                ascending=[False, False, False, False],
+            )
+            .index.tolist()
+        )
+        tail_rank = [idx for idx in combined_rank if idx not in set(final_block)]
+        return reranked_final_block + tail_rank
+
+    try:
         from src.rank_learnable import score_learned_ensemble
 
         learned_ensemble_score = score_learned_ensemble(df)

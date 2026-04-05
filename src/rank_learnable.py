@@ -143,6 +143,21 @@ def _fuse_rank_scores(*scores: pd.Series, c: float = 10.0) -> pd.Series:
     return fused
 
 
+def _aggregate_oracle_predictions(predictions: np.ndarray) -> np.ndarray:
+    """Aggregate per-oracle predictions with a conservative bottleneck score."""
+    clipped = np.clip(predictions, 0.0, 1.0)
+    harmonic = clipped.shape[1] / np.clip(
+        (1.0 / np.clip(clipped, 1e-4, None)).sum(axis=1),
+        1e-6,
+        None,
+    )
+    return (
+        0.55 * clipped.min(axis=1)
+        + 0.30 * harmonic
+        + 0.15 * clipped.mean(axis=1)
+    )
+
+
 # ---------------------------------------------------------------------------
 # MLP ranking policy
 # ---------------------------------------------------------------------------
@@ -251,6 +266,103 @@ def rank_mlp(df: pd.DataFrame, model_data: object = None, **kwargs) -> list:
     return scores.sort_values(ascending=False).index.tolist()
 
 
+def train_oracle_mlp_ranker(
+    hidden_dim: int = 128,
+    n_layers: int = 4,
+    lr: float = 7e-4,
+    epochs: int = 500,
+    dropout: float = 0.05,
+    seed: int = 42,
+) -> object:
+    """Train an MLP to predict the three oracle scores jointly."""
+    try:
+        import torch
+        import torch.nn as nn
+    except ImportError:
+        logger.warning("PyTorch not available. Oracle MLP ranker disabled. "
+                       "Install with: pip install torch")
+        return None
+
+    torch.manual_seed(seed)
+    np.random.seed(seed)
+
+    train_df, oracle_scores = _load_train_with_oracle_labels()
+    feature_df = _make_features(train_df)
+    X = feature_df.values.astype(np.float32)
+    y = _normalize_oracle_targets(oracle_scores).T.astype(np.float32)
+
+    X_mean = X.mean(axis=0)
+    X_std = X.std(axis=0) + 1e-8
+    X_norm = (X - X_mean) / X_std
+
+    layers = []
+    in_dim = X.shape[1]
+    for _ in range(max(n_layers - 1, 1)):
+        layers.append(nn.Linear(in_dim, hidden_dim))
+        layers.append(nn.ReLU())
+        if dropout > 0:
+            layers.append(nn.Dropout(dropout))
+        in_dim = hidden_dim
+    layers.append(nn.Linear(in_dim, y.shape[1]))
+    layers.append(nn.Sigmoid())
+
+    model = nn.Sequential(*layers)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=2e-4)
+    loss_fn = nn.SmoothL1Loss(beta=0.05)
+
+    X_t = torch.from_numpy(X_norm)
+    y_t = torch.from_numpy(y)
+
+    model.train()
+    for _ in range(epochs):
+        optimizer.zero_grad()
+        pred = model(X_t)
+        loss = loss_fn(pred, y_t)
+        loss.backward()
+        optimizer.step()
+
+    model.eval()
+    logger.info(
+        "Oracle MLP ranker trained: %d layers, hidden=%d, final loss=%.6f",
+        n_layers,
+        hidden_dim,
+        loss.item(),
+    )
+
+    return {
+        "model": model,
+        "X_mean": X_mean,
+        "X_std": X_std,
+        "feature_columns": feature_df.columns.tolist(),
+        "framework": "torch",
+        "targets": ["pareto_rank", "rank_product", "threshold_gate"],
+    }
+
+
+def score_oracle_mlp(
+    df: pd.DataFrame,
+    model_data: object = None,
+    **kwargs,
+) -> pd.Series:
+    """Score candidates from joint per-oracle MLP predictions."""
+    if model_data is None:
+        model_data = train_oracle_mlp_ranker(**kwargs)
+    if model_data is None:
+        raise RuntimeError("Oracle MLP ranker not available (torch not installed)")
+
+    import torch
+
+    model = model_data["model"]
+    X = _make_features(df).values.astype(np.float32)
+    X_norm = (X - model_data["X_mean"]) / model_data["X_std"]
+
+    with torch.no_grad():
+        predictions = model(torch.from_numpy(X_norm).float()).numpy()
+
+    scores = _aggregate_oracle_predictions(predictions)
+    return pd.Series(scores, index=df.index)
+
+
 # ---------------------------------------------------------------------------
 # LambdaMART ranking policy
 # ---------------------------------------------------------------------------
@@ -316,9 +428,10 @@ def score_lambdamart(
 
 
 def score_learned_ensemble(df: pd.DataFrame) -> pd.Series:
-    """Fuse MLP and LambdaMART rankings over engineered endpoint features."""
+    """Fuse composite and per-oracle learned rankers."""
     mlp_scores = None
     lambdamart_scores = None
+    oracle_mlp_scores = None
 
     try:
         mlp_scores = score_mlp(df)
@@ -330,13 +443,21 @@ def score_learned_ensemble(df: pd.DataFrame) -> pd.Series:
     except Exception:
         lambdamart_scores = None
 
-    if mlp_scores is None and lambdamart_scores is None:
+    try:
+        oracle_mlp_scores = score_oracle_mlp(df)
+    except Exception:
+        oracle_mlp_scores = None
+
+    available_scores = [
+        score for score in (mlp_scores, lambdamart_scores, oracle_mlp_scores)
+        if score is not None
+    ]
+
+    if not available_scores:
         raise RuntimeError("No learnable ranker is available")
-    if mlp_scores is None:
-        return lambdamart_scores
-    if lambdamart_scores is None:
-        return mlp_scores
-    return _fuse_rank_scores(mlp_scores, lambdamart_scores)
+    if len(available_scores) == 1:
+        return available_scores[0]
+    return _fuse_rank_scores(*available_scores)
 
 
 def rank_lambdamart(df: pd.DataFrame, model_data: object = None, **kwargs) -> list:
