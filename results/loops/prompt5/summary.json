@@ -1,0 +1,9 @@
+{
+  "total_experiments": 100,
+  "keep": 12,
+  "discard": 88,
+  "crash": 0,
+  "best_topk_enrichment": 0.7167,
+  "best_ndcg": 0.981,
+  "best_experiment": 94
+}
