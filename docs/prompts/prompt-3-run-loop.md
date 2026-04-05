@@ -14,6 +14,21 @@ Use this only **after the fixed harness is working**. This prompt is for startin
 ### Why
 This is the first stage where speed starts to matter. The whole point of the Karpathy loop is rapid iteration. A single `g5.xlarge` is the cheapest sane GPU choice for that. Do not scale up before the loop proves value.
 
+## Disk Hygiene Policy
+
+This is the stage where disk gets abused if no rules exist.
+
+- Save only **final or best** artifacts unless a checkpoint is explicitly needed
+- Do **not** store one full dataset copy per run
+- Keep experiment logs compact and machine-readable
+- Avoid dumping large intermediate tensors or embeddings unless they are part of the actual result
+- Use one explicit directory for caches and one for results
+- Periodically check disk usage before launching more runs
+- If space starts getting tight, prune temporary outputs before continuing
+
+### Practical rule
+The loop is supposed to optimize ranking policy, not create a graveyard of redundant artifacts. Keep the repo lean enough that many iterations remain cheap and manageable.
+
 ```text
 you are continuing work in:
 https://github.com/ewijaya/autoresearch-developability

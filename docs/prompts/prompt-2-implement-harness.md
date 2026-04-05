@@ -13,6 +13,21 @@ Use this only **after Prompt 1 is done and reviewed**. This prompt is for buildi
 ### Why
 The main risk in this phase is not compute starvation. It is building a bad harness. Correctness matters more than speed. Stay on CPU unless a concrete training bottleneck appears.
 
+## Disk Hygiene Policy
+
+Treat disk as a managed resource from the start.
+
+- Keep **one canonical raw dataset copy** only
+- Keep **one canonical processed dataset copy** only
+- Do **not** duplicate processed datasets per experiment
+- Put caches in explicit directories so they are easy to inspect and clean
+- Delete temporary preprocessing artifacts once the final processed version is verified
+- Prefer compact tabular summaries over large debug dumps
+- If disk usage approaches the safe limit, stop and clean before continuing
+
+### Practical rule
+At this stage, bad disk habits usually come from sloppy preprocessing, not model training. Be tidy now so Prompt 3 does not inherit a mess.
+
 ```text
 you are continuing work in:
 https://github.com/ewijaya/autoresearch-developability
