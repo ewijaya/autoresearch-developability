@@ -7,3 +7,5 @@ commit	strategy	summary_metric	topk_enrichment	ndcg	hypervolume	topk_feasible_fr
 29c21af	agent_improved	0.6500	0.6500	0.9820	0.5737	0.8500	533	20	discard	added a 0.15 min(activity_norm, 1-toxicity_norm) activity-safety balance bonus on top of the current agent_improved weighted score
 9d89adb	agent_improved	0.6500	0.6500	0.9593	0.5984	0.8500	533	20	discard	ranked agent_improved by Pareto fronts across activity/toxicity/stability/dev_penalty with the current weighted score as the within-front tie-break
 9d89adb	agent_improved	0.6667	0.6667	0.9712	0.5853	0.7000	533	20	discard	added a 0.10 sqrt(activity_norm*stability_norm) activity-stability synergy bonus on top of the current agent_improved weighted score
+7a90566	agent_improved	0.6667	0.6667	0.9844	0.5730	0.8000	533	20	discard	blended the current weighted agent_improved score with a 0.20 normalized threshold-gated activity-stability bonus using sigmoid toxicity and dev_penalty gates
+7a90566	agent_improved	0.6833	0.6833	0.9730	0.5853	0.7500	533	20	discard	increased agent_improved dev_penalty weight from 0.15 to 0.20 while keeping activity=0.50 toxicity=0.50 and stability=0.30

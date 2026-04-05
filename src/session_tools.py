@@ -48,6 +48,7 @@ RESULTS_TSV = Path(os.environ.get(
 ))
 
 RANK_PATH = SRC_DIR / "rank.py"
+RANK_LEARNABLE_PATH = SRC_DIR / "rank_learnable.py"
 PYTHON_BIN = sys.executable
 
 # Sub-directories inside RUN_DIR
@@ -69,6 +70,7 @@ class SessionState:
     best_topk_enrichment: float | None = None
     best_ndcg: float | None = None
     best_snapshot: str | None = None
+    best_learnable_snapshot: str | None = None
     best_experiment: int = 0
     total_experiments: int = 0
 
@@ -156,9 +158,12 @@ def run_experiment(description: str, strategy: str = "agent_improved",
 
     logger.info(f"--- Experiment {exp_id}: {description} ---")
 
-    # Snapshot candidate rank.py
+    # Snapshot candidate rank.py and rank_learnable.py
     snapshot_path = VERSIONS_DIR / f"{exp_id}_candidate.py"
     shutil.copy2(RANK_PATH, snapshot_path)
+    snapshot_learnable = VERSIONS_DIR / f"{exp_id}_candidate_learnable.py"
+    if RANK_LEARNABLE_PATH.exists():
+        shutil.copy2(RANK_LEARNABLE_PATH, snapshot_learnable)
     logger.info(f"Snapshot saved: {snapshot_path}")
 
     # Compute diff against best snapshot
@@ -235,12 +240,19 @@ def run_experiment(description: str, strategy: str = "agent_improved",
         state.best_ndcg = ndcg_val
         keep_path = VERSIONS_DIR / f"{exp_id}_keep.py"
         shutil.copy2(RANK_PATH, keep_path)
+        if RANK_LEARNABLE_PATH.exists():
+            keep_learnable = VERSIONS_DIR / f"{exp_id}_keep_learnable.py"
+            shutil.copy2(RANK_LEARNABLE_PATH, keep_learnable)
+            state.best_learnable_snapshot = str(keep_learnable)
         state.best_snapshot = str(keep_path)
         state.best_experiment = state.total_experiments
         logger.info(f"{exp_id}: KEEP (topk={topk:.4f}, ndcg={ndcg_val:.4f})")
     else:
         discard_path = VERSIONS_DIR / f"{exp_id}_discard.py"
         shutil.copy2(RANK_PATH, discard_path)
+        if RANK_LEARNABLE_PATH.exists():
+            shutil.copy2(RANK_LEARNABLE_PATH,
+                         VERSIONS_DIR / f"{exp_id}_discard_learnable.py")
         _restore_best(state)
         logger.info(f"{exp_id}: DISCARD (topk={topk:.4f} vs "
                     f"best={state.best_topk_enrichment:.4f})")
@@ -326,7 +338,7 @@ def _record_result(state, exp_id, metrics, status, description, strategy):
 
 
 def _restore_best(state: SessionState):
-    """Restore rank.py to the best-known version."""
+    """Restore rank.py and rank_learnable.py to the best-known versions."""
     if state.best_snapshot is None:
         logger.info("No best snapshot to restore (first experiment)")
         return
@@ -336,6 +348,14 @@ def _restore_best(state: SessionState):
         logger.info(f"Restored rank.py from {best_path.name}")
     else:
         logger.warning(f"Best snapshot not found: {best_path}")
+
+    # Also restore rank_learnable.py if we have a snapshot
+    best_learnable = getattr(state, "best_learnable_snapshot", None)
+    if best_learnable:
+        best_learnable_path = Path(best_learnable)
+        if best_learnable_path.exists():
+            shutil.copy2(best_learnable_path, RANK_LEARNABLE_PATH)
+            logger.info(f"Restored rank_learnable.py from {best_learnable_path.name}")
 
 
 # --- Status ---

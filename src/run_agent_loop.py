@@ -117,16 +117,17 @@ def create_workspace(run_dir: Path) -> Path:
 
 
 def sync_rank_py(workspace_src: Path, run_dir: Path):
-    """Sync rank.py from workspace back to the project and vice versa.
+    """Sync rank.py and rank_learnable.py from workspace back to the project.
 
-    After a keep, the workspace rank.py is the new best.
-    After a discard, session_tools.py already reverted it.
-    Either way, copy the current workspace rank.py back to the project.
+    After a keep, the workspace files are the new best.
+    After a discard, session_tools.py already reverted them.
+    Either way, copy the current workspace files back to the project.
     """
-    ws_rank = workspace_src / "rank.py"
-    proj_rank = SRC_DIR / "rank.py"
-    if ws_rank.exists():
-        shutil.copy2(ws_rank, proj_rank)
+    for filename in ["rank.py", "rank_learnable.py"]:
+        ws_file = workspace_src / filename
+        proj_file = SRC_DIR / filename
+        if ws_file.exists():
+            shutil.copy2(ws_file, proj_file)
 
 
 # ---------------------------------------------------------------------------
@@ -156,13 +157,40 @@ def build_agent_prompt(
             f"Run `python session_tools.py status` and stop.\n"
         )
 
+    # Nudge toward learnable policies after many discards on linear tweaks
+    learnable_nudge = ""
+    if existing_rows >= 5:
+        learnable_nudge = f"""
+IMPORTANT — Search strategy guidance:
+The loop has run {existing_rows} experiments so far. If most recent experiments
+have been discarded, the linear weighted-sum policy class is likely saturated.
+You should try STRUCTURALLY DIFFERENT approaches, not more weight tweaks.
+
+Specifically, try these (in rough priority order):
+1. **Edit `rank_learnable.py`** to train an MLP or LambdaMART model on oracle
+   scores and use it for ranking. Then call it from `_rank_agent_improved` in
+   `rank.py`. The file `rank_learnable.py` already has `train_mlp_ranker()` and
+   `train_lambdamart_ranker()` — you can change their hyperparameters (hidden_dim,
+   n_layers, lr, epochs, dropout, n_estimators, max_depth, learning_rate).
+   To evaluate, set `_rank_agent_improved` to call `rank_mlp(df)` or
+   `rank_lambdamart(df)` instead of `_rank_weighted_sum(df, weights=...)`.
+2. **Nonlinear scalarizations**: replace the linear weighted sum with products,
+   powers, log transforms, or piecewise functions of the endpoint scores.
+3. **Two-stage ranking**: first filter by hard constraints, then rank the
+   survivors with a different policy than the full pool.
+4. **Ensemble**: combine the outputs of multiple ranking strategies.
+
+Do NOT just keep tweaking the 4 linear weights — that space is exhausted.
+Read `rank_learnable.py` to understand what's available before deciding.
+"""
+
     prompt = f"""You are executing experiment {next_experiment} of up to {experiments} for the autoresearch-developability ranking policy loop.
 
 Read `{program_name}` and follow it. This Codex session is responsible for exactly one additional experiment row.
-
+{learnable_nudge}
 Operational requirements:
 - Work only inside this workspace's `src/` directory.
-- Do not edit any file except `rank.py` (and optionally `rank_learnable.py` for learnable policies).
+- You may edit `rank.py` AND `rank_learnable.py` (for learnable ranking policies).
 - Use `session_tools.py` for all experiment execution and logging.
 - Start with `python session_tools.py init`.
 - Run `python session_tools.py status` before deciding the next step.
@@ -170,7 +198,7 @@ Operational requirements:
 - Existing completed experiments: {existing_rows}.
 - Your goal is to leave the run with exactly one additional row in `{run_dir}/results.tsv`.
 - If the run has zero completed experiments, the next row must be the untouched baseline: `python session_tools.py run --description "baseline agent_improved"`.
-- Otherwise, inspect the current `rank.py` (run `python session_tools.py show-rank`) and recent results (run `python session_tools.py status`), make one coherent change to the ranking policy, then record it with `python session_tools.py run --description "..."`.
+- Otherwise, inspect the current `rank.py` (run `python session_tools.py show-rank`), also read `rank_learnable.py`, and check recent results (run `python session_tools.py status`), make one coherent change to the ranking policy, then record it with `python session_tools.py run --description "..."`.
 - The description must say exactly what you changed in the ranking policy.
 - Stop after that single additional row is recorded.
 - If a run crashes, log it through `session_tools.py` and continue.
@@ -181,7 +209,8 @@ Operational requirements:
 - Avoid commands that print huge files.
 - When the new row is present, run `python session_tools.py status` and stop immediately.
 
-What you may change in rank.py:
+What you may change:
+IN rank.py:
 - Scalarization strategy and objective weights
 - Pareto ranking logic
 - Lexicographic filtering thresholds
@@ -190,10 +219,17 @@ What you may change in rank.py:
 - Interaction terms between endpoints
 - Diversity bonus or redundancy penalty
 - Top-k selection and tie-break logic
-- Parameters of learnable policies (MLP architecture, LambdaMART hyperparameters)
+- Make `_rank_agent_improved` call learnable rankers from `rank_learnable.py`
+
+IN rank_learnable.py:
+- MLP architecture: hidden_dim, n_layers, dropout, lr, epochs
+- LambdaMART: n_estimators, max_depth, learning_rate
+- Feature engineering: add interaction features, transforms
+- Training strategy: loss function, regularization
+- Ensemble of MLP + LambdaMART
 
 What you may NOT change:
-- evaluate.py, prepare.py, or any endpoint_*.py file
+- evaluate.py, prepare.py, session_tools.py, or any endpoint_*.py file
 - The evaluation metrics or oracle definitions
 - Data files or splits
 """
