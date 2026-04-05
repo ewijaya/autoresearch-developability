@@ -159,7 +159,7 @@ def _reciprocal_rank_fusion_score(*scores, c=10.0):
 
 
 def _rank_agent_improved(df, **kwargs):
-    """Prioritize consensus shortlist members, then rerank with an ensemble."""
+    """Select a heuristic consensus set, then rerank the chosen top-20 block."""
     gate_score = _threshold_gate_score(df)
     rank_product_score = _rank_product_score(df)
     pareto_score = _pareto_score(df)
@@ -183,40 +183,60 @@ def _rank_agent_improved(df, **kwargs):
         return fusion_score.sort_values(ascending=False).index.tolist()
 
     try:
-        from src.rank_learnable import train_lambdamart_ranker
+        from src.rank_learnable import score_learned_ensemble
 
-        model_data = train_lambdamart_ranker()
+        learned_ensemble_score = score_learned_ensemble(df)
     except Exception:
-        model_data = None
+        learned_ensemble_score = None
 
-    if model_data is not None:
-        lambdamart_score = df["activity"] * 0.0 + model_data["model"].predict(
-            df[["activity", "toxicity", "stability", "dev_penalty"]]
-        )
-        ensemble_score = _reciprocal_rank_fusion_score(
-            lambdamart_score,
-            gate_score,
-            rank_product_score,
-            pareto_score,
-        )
-        return (
-            df.assign(
-                consensus_flag=df.index.isin(consensus_shortlist).astype(int),
-                ensemble_score=ensemble_score,
-                lambdamart_score=lambdamart_score,
-                fusion_score=fusion_score,
+    if learned_ensemble_score is not None:
+        reranked_shortlist = (
+            df.loc[consensus_shortlist]
+            .assign(
+                gate_score=gate_score.loc[consensus_shortlist],
+                learned_ensemble_score=learned_ensemble_score.loc[consensus_shortlist],
+                activity=df.loc[consensus_shortlist, "activity"],
             )
             .sort_values(
                 [
-                    "consensus_flag",
-                    "ensemble_score",
-                    "lambdamart_score",
+                    "gate_score",
+                    "learned_ensemble_score",
                     "activity",
                 ],
-                ascending=[False, False, False, False],
+                ascending=[False, False, False],
             )
             .index.tolist()
         )
+        remaining_score = _reciprocal_rank_fusion_score(
+            learned_ensemble_score,
+            pareto_score,
+        )
+        consensus_set = set(consensus_shortlist)
+        remaining_rank = [
+            idx for idx in remaining_score.sort_values(ascending=False).index
+            if idx not in consensus_set
+        ]
+        combined_rank = reranked_shortlist + remaining_rank
+        final_block = combined_rank[:shortlist_size]
+        reranked_final_block = (
+            df.loc[final_block]
+            .assign(
+                gate_score=gate_score.loc[final_block],
+                learned_ensemble_score=learned_ensemble_score.loc[final_block],
+                activity=df.loc[final_block, "activity"],
+            )
+            .sort_values(
+                [
+                    "gate_score",
+                    "learned_ensemble_score",
+                    "activity",
+                ],
+                ascending=[False, False, False],
+            )
+            .index.tolist()
+        )
+        tail_rank = [idx for idx in combined_rank if idx not in set(final_block)]
+        return reranked_final_block + tail_rank
 
     reranked_shortlist = (
         df.loc[consensus_shortlist]
@@ -244,7 +264,29 @@ def _rank_agent_improved(df, **kwargs):
         idx for idx in fusion_score.sort_values(ascending=False).index
         if idx not in consensus_set
     ]
-    return reranked_shortlist + remaining_rank
+    combined_rank = reranked_shortlist + remaining_rank
+    final_block = combined_rank[:shortlist_size]
+    reranked_final_block = (
+        df.loc[final_block]
+        .assign(
+            gate_score=gate_score.loc[final_block],
+            fusion_score=fusion_score.loc[final_block],
+            rank_product_score=rank_product_score.loc[final_block],
+            activity=df.loc[final_block, "activity"],
+        )
+        .sort_values(
+            [
+                "gate_score",
+                "fusion_score",
+                "rank_product_score",
+                "activity",
+            ],
+            ascending=[False, False, False, False],
+        )
+        .index.tolist()
+    )
+    tail_rank = [idx for idx in combined_rank if idx not in set(final_block)]
+    return reranked_final_block + tail_rank
 
 
 # --- Learnable policies (require optional dependencies) ---

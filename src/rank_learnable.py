@@ -47,26 +47,100 @@ def _load_train_with_oracle_labels(k: int = 20) -> tuple:
     return train_df, oracle_scores
 
 
-def _make_features(df: pd.DataFrame) -> np.ndarray:
-    """Extract the 4 endpoint scores as feature matrix for ranking models."""
-    return df[["activity", "toxicity", "stability", "dev_penalty"]].values
+def _norm(s: pd.Series) -> pd.Series:
+    """Min-max normalize a Series to [0, 1]."""
+    r = s.max() - s.min()
+    if r < 1e-10:
+        return s * 0.0 + 0.5
+    return (s - s.min()) / r
 
 
-def _make_composite_target(oracle_scores: dict) -> np.ndarray:
-    """Create a single composite target by averaging oracle scores.
+def _make_features(df: pd.DataFrame) -> pd.DataFrame:
+    """Build engineered endpoint features for learned ranking models."""
+    act = _norm(df["activity"])
+    tox = _norm(df["toxicity"])
+    stab = _norm(df["stability"])
+    dev = _norm(df["dev_penalty"])
 
-    Each oracle is min-max normalized before averaging so they
-    contribute equally regardless of scale.
-    """
+    safe = 1.0 - tox
+    devq = 1.0 - dev
+    tox_gate = 1.0 / (1.0 + np.exp(10.0 * (tox - 0.5)))
+    dev_gate = 1.0 / (1.0 + np.exp(10.0 * (dev - 0.5)))
+    gate_score = act * (0.3 + 0.7 * stab) * tox_gate * dev_gate
+
+    return pd.DataFrame(
+        {
+            "activity": df["activity"],
+            "toxicity": df["toxicity"],
+            "stability": df["stability"],
+            "dev_penalty": df["dev_penalty"],
+            "act_n": act,
+            "tox_n": tox,
+            "stab_n": stab,
+            "dev_n": dev,
+            "safe_n": safe,
+            "devq_n": devq,
+            "act_safe": act * safe,
+            "act_stab": act * stab,
+            "act_devq": act * devq,
+            "safe_stab": safe * stab,
+            "safe_devq": safe * devq,
+            "stab_devq": stab * devq,
+            "act_safe_stab": act * safe * stab,
+            "act_safe_devq": act * safe * devq,
+            "gate_score": gate_score,
+            "tox_gate": tox_gate,
+            "dev_gate": dev_gate,
+            "bottleneck": np.minimum.reduce(
+                [act.values, safe.values, stab.values, devq.values]
+            ),
+            "geom4": np.power(
+                np.clip(act * safe * stab * devq, 1e-12, None),
+                0.25,
+            ),
+            "harm4": 4.0 / np.clip(
+                1.0 / np.clip(act, 1e-6, None)
+                + 1.0 / np.clip(safe, 1e-6, None)
+                + 1.0 / np.clip(stab, 1e-6, None)
+                + 1.0 / np.clip(devq, 1e-6, None),
+                1e-6,
+                None,
+            ),
+        },
+        index=df.index,
+    )
+
+
+def _normalize_oracle_targets(oracle_scores: dict) -> np.ndarray:
+    """Normalize each oracle target independently to [0, 1]."""
     normalized = []
-    for name, scores in oracle_scores.items():
-        arr = scores.values
+    for scores in oracle_scores.values():
+        arr = scores.values.astype(float)
         r = arr.max() - arr.min()
         if r < 1e-10:
             normalized.append(np.zeros_like(arr))
         else:
             normalized.append((arr - arr.min()) / r)
-    return np.mean(normalized, axis=0)
+    return np.vstack(normalized)
+
+
+def _make_composite_target(oracle_scores: dict) -> np.ndarray:
+    """Create a conservative composite target from normalized oracle scores.
+
+    The target rewards candidates that are good across all oracle views,
+    not just excellent on one of them.
+    """
+    normalized = _normalize_oracle_targets(oracle_scores)
+    return 0.65 * normalized.min(axis=0) + 0.35 * normalized.mean(axis=0)
+
+
+def _fuse_rank_scores(*scores: pd.Series, c: float = 10.0) -> pd.Series:
+    """Combine score orderings by reciprocal-rank fusion."""
+    fused = pd.Series(0.0, index=scores[0].index, dtype=float)
+    for score in scores:
+        ranks = score.rank(ascending=False, method="average")
+        fused = fused + 1.0 / (c + ranks)
+    return fused
 
 
 # ---------------------------------------------------------------------------
@@ -75,11 +149,11 @@ def _make_composite_target(oracle_scores: dict) -> np.ndarray:
 
 
 def train_mlp_ranker(
-    hidden_dim: int = 32,
-    n_layers: int = 2,
-    lr: float = 1e-3,
-    epochs: int = 200,
-    dropout: float = 0.1,
+    hidden_dim: int = 96,
+    n_layers: int = 3,
+    lr: float = 8e-4,
+    epochs: int = 400,
+    dropout: float = 0.05,
     seed: int = 42,
 ) -> object:
     """Train a small MLP to predict composite oracle scores from endpoints.
@@ -102,7 +176,8 @@ def train_mlp_ranker(
     np.random.seed(seed)
 
     train_df, oracle_scores = _load_train_with_oracle_labels()
-    X = _make_features(train_df).astype(np.float32)
+    feature_df = _make_features(train_df)
+    X = feature_df.values.astype(np.float32)
     y = _make_composite_target(oracle_scores).astype(np.float32)
 
     # Standardize features
@@ -123,8 +198,8 @@ def train_mlp_ranker(
         in_dim = hidden_dim
 
     model = nn.Sequential(*layers)
-    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
-    loss_fn = nn.MSELoss()
+    optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=1e-4)
+    loss_fn = nn.SmoothL1Loss(beta=0.05)
 
     X_t = torch.from_numpy(X_norm)
     y_t = torch.from_numpy(y).unsqueeze(1)
@@ -146,15 +221,13 @@ def train_mlp_ranker(
         "model": model,
         "X_mean": X_mean,
         "X_std": X_std,
+        "feature_columns": feature_df.columns.tolist(),
         "framework": "torch",
     }
 
 
-def rank_mlp(df: pd.DataFrame, model_data: object = None, **kwargs) -> list:
-    """Rank candidates using the trained MLP.
-
-    If model_data is None, trains a new model (uses training split).
-    """
+def score_mlp(df: pd.DataFrame, model_data: object = None, **kwargs) -> pd.Series:
+    """Score candidates with the trained MLP."""
     if model_data is None:
         model_data = train_mlp_ranker(**kwargs)
     if model_data is None:
@@ -163,15 +236,19 @@ def rank_mlp(df: pd.DataFrame, model_data: object = None, **kwargs) -> list:
     import torch
 
     model = model_data["model"]
-    X = _make_features(df).astype(np.float32)
+    X = _make_features(df).values.astype(np.float32)
     X_norm = (X - model_data["X_mean"]) / model_data["X_std"]
 
     with torch.no_grad():
         scores = model(torch.from_numpy(X_norm).float()).squeeze().numpy()
 
-    # Higher score = better candidate
-    ranked_idx = np.argsort(-scores)
-    return df.index[ranked_idx].tolist()
+    return pd.Series(scores, index=df.index)
+
+
+def rank_mlp(df: pd.DataFrame, model_data: object = None, **kwargs) -> list:
+    """Rank candidates using the trained MLP."""
+    scores = score_mlp(df, model_data=model_data, **kwargs)
+    return scores.sort_values(ascending=False).index.tolist()
 
 
 # ---------------------------------------------------------------------------
@@ -180,9 +257,9 @@ def rank_mlp(df: pd.DataFrame, model_data: object = None, **kwargs) -> list:
 
 
 def train_lambdamart_ranker(
-    n_estimators: int = 100,
-    max_depth: int = 4,
-    learning_rate: float = 0.1,
+    n_estimators: int = 250,
+    max_depth: int = 5,
+    learning_rate: float = 0.03,
     seed: int = 42,
 ) -> object:
     """Train a LightGBM LambdaMART model for learning-to-rank.
@@ -219,11 +296,12 @@ def train_lambdamart_ranker(
     return {"model": model, "framework": "lightgbm"}
 
 
-def rank_lambdamart(df: pd.DataFrame, model_data: object = None, **kwargs) -> list:
-    """Rank candidates using the trained LambdaMART model.
-
-    If model_data is None, trains a new model (uses training split).
-    """
+def score_lambdamart(
+    df: pd.DataFrame,
+    model_data: object = None,
+    **kwargs,
+) -> pd.Series:
+    """Score candidates with the trained LambdaMART model."""
     if model_data is None:
         model_data = train_lambdamart_ranker(**kwargs)
     if model_data is None:
@@ -234,5 +312,34 @@ def rank_lambdamart(df: pd.DataFrame, model_data: object = None, **kwargs) -> li
     X = _make_features(df)
     scores = model.predict(X)
 
-    ranked_idx = np.argsort(-scores)
-    return df.index[ranked_idx].tolist()
+    return pd.Series(scores, index=df.index)
+
+
+def score_learned_ensemble(df: pd.DataFrame) -> pd.Series:
+    """Fuse MLP and LambdaMART rankings over engineered endpoint features."""
+    mlp_scores = None
+    lambdamart_scores = None
+
+    try:
+        mlp_scores = score_mlp(df)
+    except Exception:
+        mlp_scores = None
+
+    try:
+        lambdamart_scores = score_lambdamart(df)
+    except Exception:
+        lambdamart_scores = None
+
+    if mlp_scores is None and lambdamart_scores is None:
+        raise RuntimeError("No learnable ranker is available")
+    if mlp_scores is None:
+        return lambdamart_scores
+    if lambdamart_scores is None:
+        return mlp_scores
+    return _fuse_rank_scores(mlp_scores, lambdamart_scores)
+
+
+def rank_lambdamart(df: pd.DataFrame, model_data: object = None, **kwargs) -> list:
+    """Rank candidates using the trained LambdaMART model."""
+    scores = score_lambdamart(df, model_data=model_data, **kwargs)
+    return scores.sort_values(ascending=False).index.tolist()
