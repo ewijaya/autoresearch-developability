@@ -80,12 +80,13 @@ The following baselines must exist before the loop starts:
 
 ## Evaluation metrics
 
-Primary:
-- **top-k enrichment** (fraction of true top candidates captured)
-- **NDCG** (normalized discounted cumulative gain)
-- **hypervolume** (dominated multi-objective volume)
+**Keep/discard metric hierarchy (LOCKED):**
+1. **top-k enrichment** — primary summary metric for keep/discard decisions
+2. **NDCG** — secondary; reported but not the first-line decision target
+3. **hypervolume** — diagnostic only; useful for understanding trade-offs,
+   not for keep/discard gating
 
-Secondary:
+Other reported metrics:
 - fraction of top-k satisfying all hard constraints
 - diversity among top-k (sequence distance)
 - Spearman/Kendall rank correlation where reference rankings exist

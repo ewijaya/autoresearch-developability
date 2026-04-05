@@ -114,4 +114,4 @@ endpoint modules) and run one end-to-end dry run.
 
 ## License
 
-TBD
+MIT

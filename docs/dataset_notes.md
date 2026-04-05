@@ -6,6 +6,11 @@ Choose the **smallest coherent bundle** of public datasets that lets us
 demonstrate multi-objective peptide ranking. Biological perfection is not
 the goal; a stable, reproducible benchmark for the framework is.
 
+**Benchmark philosophy (locked):** This is a synthetic multi-objective
+benchmark. The paper claim is about the *framework* — whether an
+autoresearch loop can improve multi-objective ranking — not about solving
+peptide drug discovery in full realism.
+
 ---
 
 ## Endpoint 1: Activity (antimicrobial peptides)
@@ -27,10 +32,12 @@ the goal; a stable, reproducible benchmark for the framework is.
 
 - Broader activity types but noisier; prefer DBAASP for v1
 
-### Decision: use DBAASP with one reference organism for v1
+### Decision: DBAASP with *E. coli* ATCC 25922 (LOCKED)
 
-Pick a single organism with the most data points to maximize statistical
-power. Document the organism choice explicitly.
+Use *E. coli* ATCC 25922 as the reference organism for v1. This is a
+standard Gram-negative reference strain with broad coverage in DBAASP.
+Do not revisit this choice unless data download reveals fewer than 500
+usable peptides for this strain.
 
 ---
 
@@ -133,18 +140,25 @@ endpoints. There are two approaches:
 - Risk: too small for meaningful ranking evaluation
 
 **Approach B: Separate endpoint models, unified candidate set**
-- Train/obtain a predictor for each endpoint on its native dataset
-- Apply all predictors to a shared candidate pool (e.g., all DBAASP peptides)
+- Train simple local models for each endpoint on its native dataset
+- Apply all models to a shared candidate pool (all DBAASP peptides)
 - Pro: large candidate set, all peptides get scores for all endpoints
 - Con: predicted scores, not ground truth, for some endpoints
 - This is what the PRD recommends
 
-### Decision: Approach B for v1
+### Decision: Approach B with local models only (LOCKED)
 
-Use DBAASP peptides as the candidate pool. Train or use published
-models/rules for toxicity, stability, and developability scoring.
-Activity comes from DBAASP ground truth. This gives us a large enough
-ranking problem to be meaningful.
+Use DBAASP peptides as the candidate pool. Train simple local models
+(RF/XGBoost on AAindex features) for toxicity, stability, and
+developability scoring. Activity comes from DBAASP ground truth.
+
+**Locked constraints:**
+- **No external APIs or hosted prediction services.** All endpoint
+  models must be trained and run locally.
+- **Sequence representation:** AAindex / physicochemical features for v1.
+  ESM embeddings are deferred to Phase 2 or ablation only — not a blocker.
+- **Model complexity:** simple scikit-learn models (RandomForest,
+  GradientBoosting). No deep learning for endpoint models in v1.
 
 ---
 
@@ -157,10 +171,17 @@ ranking problem to be meaningful.
 
 ### Leakage controls
 
-- Split by **peptide sequence** (not by data row)
-- Remove near-duplicates: peptides with > 90% sequence identity should
-  be in the same split (cluster-based splitting via cd-hit or mmseqs2)
-- Document the clustering threshold and method
+**Deduplication (LOCKED):**
+1. Deduplicate exact sequences first (canonical form)
+2. Then apply cluster-based splitting
+
+**Splitting (LOCKED):**
+- Use **mmseqs2** for cluster-aware splitting (peptides with > 90%
+  sequence identity go to the same split)
+- If mmseqs2 setup becomes a hard blocker, fall back temporarily to
+  exact-sequence dedup plus random split — but document this clearly
+  as a known limitation and fix before paper submission
+- Split by cluster assignment, not by individual sequence
 
 ---
 
@@ -176,6 +197,26 @@ ranking problem to be meaningful.
 The candidate pool for ranking will be the DBAASP subset with valid
 activity labels. Other endpoints are predicted or computed for all
 candidates.
+
+---
+
+---
+
+## Locked decisions for Prompt 2
+
+These decisions are final unless a hard blocker appears during
+implementation. Do not revisit without explicit human override.
+
+| # | Decision | Detail |
+|---|---|---|
+| 1 | Activity organism | *E. coli* ATCC 25922 via DBAASP |
+| 2 | Endpoint models | Train simple local models only (RF/XGBoost). No external APIs. |
+| 3 | Sequence features | AAindex / physicochemical. ESM = Phase 2 or ablation only. |
+| 4 | Split tooling | mmseqs2 cluster-aware split. Fallback: exact dedup + random split (documented). |
+| 5 | Keep/discard metric | Top-k enrichment primary. NDCG secondary. Hypervolume diagnostic only. |
+| 6 | Deduplication | Exact sequence dedup first, then clustered splitting. |
+| 7 | License | MIT |
+| 8 | Benchmark philosophy | Synthetic multi-objective benchmark. Claim is about the framework. |
 
 ---
 
