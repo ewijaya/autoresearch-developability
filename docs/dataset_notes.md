@@ -213,12 +213,31 @@ developability scoring. Activity comes from DBAASP ground truth.
 | Val | 533 |
 | Test | 534 |
 
-**Endpoint model performance:**
+**Endpoint model performance (held-out evaluation, 80/20 split):**
 
-| Model | Metric | Value | Training data |
-|---|---|---|---|
-| Toxicity RF | Train AUC | 0.988 | 8,828 ToxinPred3 sequences |
-| Stability RF | Train R² | 0.824 | 375 HLP sequences |
+| Model | Held-out metric | Value | Train metric (diag.) | Training data |
+|---|---|---|---|---|
+| Toxicity RF | AUC | **0.920** | 0.988 | 8,828 ToxinPred3 |
+| Toxicity RF | Accuracy | **0.850** | — | — |
+| Toxicity RF | F1 | **0.845** | — | — |
+| Stability RF | R² | **0.547** | 0.801 | 375 HLP |
+| Stability RF | MAE | **0.551** | — | — |
+
+**Interpretation:**
+- Toxicity model generalizes reasonably (AUC 0.920 held-out).
+- Stability model is weak (R² 0.547 held-out, heavy overfitting from
+  0.801 train). The 375-peptide HLP dataset is too small for robust
+  generalization, especially cross-domain to AMPs. Stability predictions
+  should be treated as a soft noisy signal, not a reliable endpoint.
+
+**ToxinPred3 training overlap:**
+- 318/3,554 (8.9%) candidate pool peptides also appear in ToxinPred3
+  training data. For these candidates, the toxicity prediction is
+  optimistically biased (the model has seen them).
+- Each processed CSV includes a `tox_train_overlap` boolean column
+  to flag these candidates.
+- Overlap audit shows ranking metrics are stable with/without these
+  candidates (see `python -m src.evaluate --audit-overlap`).
 
 The candidate pool for ranking is the DBAASP subset with valid
 activity labels. Toxicity and stability are predicted by RF models.

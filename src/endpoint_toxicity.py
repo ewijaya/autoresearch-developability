@@ -56,8 +56,14 @@ def load_toxinpred_data(data_dir: Path) -> tuple:
 def train_toxicity_model(data_dir: Path, save: bool = True) -> RandomForestClassifier:
     """Train toxicity classifier on ToxinPred3 data.
 
-    Returns the trained model.
+    Uses 80/20 stratified split for held-out evaluation.
+    Final model is trained on all data after reporting held-out metrics.
+
+    Returns the trained model (fitted on full data).
     """
+    from sklearn.model_selection import StratifiedShuffleSplit
+    from sklearn.metrics import accuracy_score, f1_score
+
     sequences, labels = load_toxinpred_data(data_dir)
 
     X, feat_names, valid_mask = sequences_to_feature_matrix(sequences)
@@ -67,26 +73,55 @@ def train_toxicity_model(data_dir: Path, save: bool = True) -> RandomForestClass
     valid_idx = [i for i, v in enumerate(valid_mask) if v]
     X = X[valid_idx]
     y = y[valid_idx]
-    logger.info(f"Training toxicity model on {len(valid_idx)} valid sequences, "
+    logger.info(f"Toxicity data: {len(valid_idx)} valid sequences, "
                 f"{len(feat_names)} features")
 
+    # --- Held-out evaluation (80/20 stratified split) ---
+    splitter = StratifiedShuffleSplit(n_splits=1, test_size=0.2, random_state=42)
+    train_idx, test_idx = next(splitter.split(X, y))
+    X_train, X_test = X[train_idx], X[test_idx]
+    y_train, y_test = y[train_idx], y[test_idx]
+
+    eval_model = RandomForestClassifier(
+        n_estimators=200, max_depth=15, min_samples_leaf=5,
+        random_state=42, n_jobs=-1,
+    )
+    eval_model.fit(X_train, y_train)
+
+    # Held-out metrics (the real ones)
+    test_probs = eval_model.predict_proba(X_test)[:, 1]
+    test_preds = eval_model.predict(X_test)
+    heldout_auc = roc_auc_score(y_test, test_probs)
+    heldout_acc = accuracy_score(y_test, test_preds)
+    heldout_f1 = f1_score(y_test, test_preds)
+    logger.info(f"Toxicity held-out AUC: {heldout_auc:.3f}, "
+                f"acc: {heldout_acc:.3f}, F1: {heldout_f1:.3f}")
+
+    # Diagnostic: train metrics (for comparison only)
+    train_auc = roc_auc_score(y_train, eval_model.predict_proba(X_train)[:, 1])
+    logger.info(f"Toxicity train AUC: {train_auc:.3f} (diagnostic only)")
+
+    # --- Final model: train on all data ---
     model = RandomForestClassifier(
-        n_estimators=200,
-        max_depth=15,
-        min_samples_leaf=5,
-        random_state=42,
-        n_jobs=-1,
+        n_estimators=200, max_depth=15, min_samples_leaf=5,
+        random_state=42, n_jobs=-1,
     )
     model.fit(X, y)
-
-    # Quick self-check (not a proper evaluation — just sanity)
-    train_auc = roc_auc_score(y, model.predict_proba(X)[:, 1])
-    logger.info(f"Toxicity model train AUC: {train_auc:.3f}")
 
     if save:
         MODEL_PATH.parent.mkdir(parents=True, exist_ok=True)
         with open(MODEL_PATH, "wb") as f:
-            pickle.dump({"model": model, "feature_names": feat_names}, f)
+            pickle.dump({
+                "model": model,
+                "feature_names": feat_names,
+                "heldout_metrics": {
+                    "auc": heldout_auc,
+                    "accuracy": heldout_acc,
+                    "f1": heldout_f1,
+                    "n_train": len(train_idx),
+                    "n_test": len(test_idx),
+                },
+            }, f)
         logger.info(f"Saved toxicity model to {MODEL_PATH}")
 
     return model

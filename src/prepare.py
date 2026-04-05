@@ -429,6 +429,21 @@ def _try_mmseqs_split(df: pd.DataFrame, seed: int) -> tuple | None:
         return None
 
 
+def _load_toxinpred_sequences(data_dir: Path) -> set:
+    """Load all ToxinPred3 training sequences as a set for overlap checking."""
+    seqs = set()
+    for fname in ["train_pos.csv", "train_neg.csv"]:
+        fpath = data_dir / fname
+        if not fpath.exists():
+            continue
+        with open(fpath) as f:
+            for line in f:
+                s = line.strip().upper()
+                if s and all(c.isalpha() for c in s):
+                    seqs.add(s)
+    return seqs
+
+
 def build_candidate_pool(
     dbaasp_df: pd.DataFrame,
     toxinpred_dir: Path,
@@ -436,13 +451,18 @@ def build_candidate_pool(
 ) -> pd.DataFrame:
     """Build the unified candidate pool with all endpoint scores.
 
+    Also flags candidates that overlap with ToxinPred3 training data
+    (column: tox_train_overlap). These candidates have potentially
+    optimistic toxicity predictions.
+
     Args:
         dbaasp_df: Parsed DBAASP DataFrame with sequence and MIC columns.
         toxinpred_dir: Directory containing ToxinPred3 training files.
         hlp_dir: Directory containing HLP data files.
 
     Returns:
-        DataFrame with columns: sequence, activity, toxicity, stability, dev_penalty
+        DataFrame with columns: sequence, activity, toxicity, stability,
+        dev_penalty, tox_train_overlap, mic_raw, dbaasp_id
     """
     sequences = dbaasp_df["sequence"].tolist()
     n = len(sequences)
@@ -473,12 +493,20 @@ def build_candidate_pool(
     logger.info(f"  Developability: scored {n} peptides, "
                 f"mean penalty={np.mean(dev_penalty):.3f}")
 
+    # 5. Flag ToxinPred3 training overlap
+    tox_train_seqs = _load_toxinpred_sequences(toxinpred_dir)
+    overlap_flags = [seq in tox_train_seqs for seq in sequences]
+    n_overlap = sum(overlap_flags)
+    logger.info(f"  ToxinPred3 training overlap: {n_overlap}/{n} "
+                f"({100*n_overlap/n:.1f}%) candidates flagged")
+
     pool = pd.DataFrame({
         "sequence": sequences,
         "activity": activity,
         "toxicity": toxicity,
         "stability": stability,
         "dev_penalty": dev_penalty,
+        "tox_train_overlap": overlap_flags,
         "mic_raw": dbaasp_df["mic"].values,
         "dbaasp_id": dbaasp_df["dbaasp_id"].values,
     })

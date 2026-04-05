@@ -8,12 +8,12 @@ iterative loop on public data.
 An autonomous loop iteratively improves a **ranking policy** that triages
 peptide drug candidates across four competing objectives:
 
-| Endpoint | Source | Type |
-|---|---|---|
-| Activity | DBAASP antimicrobial MIC | Quantitative (log MIC) |
-| Toxicity | ToxinPred3 | Binary classification |
-| Stability | HLP half-life | Quantitative (log t½) |
-| Developability | Rule-based sequence analysis | Composite penalty |
+| Endpoint | Source | Type | On candidate pool |
+|---|---|---|---|
+| Activity | DBAASP antimicrobial MIC | Quantitative (log MIC) | **Ground truth** |
+| Toxicity | ToxinPred3 RF model | Binary classification | Predicted (held-out AUC 0.920) |
+| Stability | HLP RF model | Quantitative (log t½) | Predicted (held-out R² 0.547) |
+| Developability | Rule-based sequence analysis | Composite penalty | Computed (deterministic) |
 
 The loop follows Karpathy's [autoresearch](https://github.com/karpathy/autoresearch)
 discipline: a **fixed evaluation harness** and a **single editable file**
@@ -117,10 +117,30 @@ See `program.md` for the full agent operating rules.
 
 ## Metrics
 
-- **Top-k enrichment:** fraction of true top candidates captured in top-k
-- **NDCG:** normalized discounted cumulative gain
-- **Hypervolume:** dominated volume in multi-objective space
-- Bootstrap robustness, diversity, constraint satisfaction
+- **Top-k enrichment:** fraction of oracle-top-k candidates captured in the
+  policy's top-k. The oracle uses a multiplicative combination of all four
+  endpoints — intentionally different from any baseline formula. This is a
+  synthetic reference ranking, not a wet-lab gold standard.
+- **NDCG:** normalized discounted cumulative gain vs the oracle ordering
+- **Hypervolume:** dominated area in (activity, 1-toxicity) space for top-k
+- **Feasible fraction:** share of top-k satisfying all hard constraints
+
+## Benchmark honesty
+
+This is a **synthetic multi-objective benchmark**. The claim is about the
+framework, not about solving peptide drug discovery.
+
+- Only **activity** has experimental ground truth on the candidate pool
+  (DBAASP MIC values for E. coli ATCC 25922)
+- **Toxicity** is predicted by an RF model trained on ToxinPred3 data
+  (held-out AUC 0.920; 8.9% of candidates overlap with ToxinPred3 training)
+- **Stability** is predicted by an RF model trained on 375 HLP peptides
+  (held-out R² 0.547 — weak; cross-domain generalization is uncertain)
+- **Developability** is a deterministic rule-based score, not empirical
+- The **oracle ranking** used for top-k enrichment is a formula we defined,
+  not a validated clinical ordering
+- Splitting is random (mmseqs2 cluster-aware splitting is supported but
+  not yet installed)
 
 ## Status
 

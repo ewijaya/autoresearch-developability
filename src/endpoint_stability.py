@@ -66,8 +66,14 @@ def load_hlp_data(data_dir: Path) -> tuple:
 def train_stability_model(data_dir: Path, save: bool = True) -> RandomForestRegressor:
     """Train stability regressor on HLP data.
 
-    Returns the trained model.
+    Uses 80/20 split for held-out evaluation.
+    Final model is trained on all data after reporting held-out metrics.
+
+    Returns the trained model (fitted on full data).
     """
+    from sklearn.model_selection import ShuffleSplit
+    from sklearn.metrics import mean_absolute_error
+
     sequences, log_hl = load_hlp_data(data_dir)
 
     X, feat_names, valid_mask = sequences_to_feature_matrix(sequences)
@@ -76,26 +82,50 @@ def train_stability_model(data_dir: Path, save: bool = True) -> RandomForestRegr
     valid_idx = [i for i, v in enumerate(valid_mask) if v]
     X = X[valid_idx]
     y = y[valid_idx]
-    logger.info(f"Training stability model on {len(valid_idx)} valid sequences, "
+    logger.info(f"Stability data: {len(valid_idx)} valid sequences, "
                 f"{len(feat_names)} features")
 
+    # --- Held-out evaluation (80/20 split) ---
+    splitter = ShuffleSplit(n_splits=1, test_size=0.2, random_state=42)
+    train_idx, test_idx = next(splitter.split(X, y))
+    X_train, X_test = X[train_idx], X[test_idx]
+    y_train, y_test = y[train_idx], y[test_idx]
+
+    eval_model = RandomForestRegressor(
+        n_estimators=200, max_depth=10, min_samples_leaf=5,
+        random_state=42, n_jobs=-1,
+    )
+    eval_model.fit(X_train, y_train)
+
+    # Held-out metrics (the real ones)
+    heldout_r2 = eval_model.score(X_test, y_test)
+    heldout_mae = mean_absolute_error(y_test, eval_model.predict(X_test))
+    logger.info(f"Stability held-out R²: {heldout_r2:.3f}, MAE: {heldout_mae:.3f}")
+
+    # Diagnostic: train metrics (for comparison only)
+    train_r2 = eval_model.score(X_train, y_train)
+    logger.info(f"Stability train R²: {train_r2:.3f} (diagnostic only)")
+
+    # --- Final model: train on all data ---
     model = RandomForestRegressor(
-        n_estimators=200,
-        max_depth=10,
-        min_samples_leaf=5,
-        random_state=42,
-        n_jobs=-1,
+        n_estimators=200, max_depth=10, min_samples_leaf=5,
+        random_state=42, n_jobs=-1,
     )
     model.fit(X, y)
-
-    # Sanity check
-    train_r2 = model.score(X, y)
-    logger.info(f"Stability model train R²: {train_r2:.3f}")
 
     if save:
         MODEL_PATH.parent.mkdir(parents=True, exist_ok=True)
         with open(MODEL_PATH, "wb") as f:
-            pickle.dump({"model": model, "feature_names": feat_names}, f)
+            pickle.dump({
+                "model": model,
+                "feature_names": feat_names,
+                "heldout_metrics": {
+                    "r2": heldout_r2,
+                    "mae": heldout_mae,
+                    "n_train": len(train_idx),
+                    "n_test": len(test_idx),
+                },
+            }, f)
         logger.info(f"Saved stability model to {MODEL_PATH}")
 
     return model

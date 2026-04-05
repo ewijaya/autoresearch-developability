@@ -288,6 +288,59 @@ def run_evaluation(split: str = "val", strategy: str = "weighted_sum",
     return metrics
 
 
+def run_overlap_audit(split: str = "val", k: int = 20):
+    """Report metrics with and without ToxinPred3-overlapping candidates.
+
+    This is a benchmark integrity check. If metrics change significantly
+    when overlap candidates are removed, the toxicity endpoint may be
+    giving those candidates an unfair advantage.
+    """
+    csv_path = PROCESSED_DIR / f"{split}.csv"
+    df = pd.read_csv(csv_path)
+
+    if "tox_train_overlap" not in df.columns:
+        logger.warning("No tox_train_overlap column — skipping overlap audit. "
+                       "Re-run prepare.py to add it.")
+        return None
+
+    n_overlap = df["tox_train_overlap"].sum()
+    logger.info(f"\n{'='*60}")
+    logger.info(f"OVERLAP AUDIT ({split} split)")
+    logger.info(f"{'='*60}")
+    logger.info(f"Candidates with ToxinPred3 training overlap: "
+                f"{n_overlap}/{len(df)} ({100*n_overlap/len(df):.1f}%)")
+
+    if n_overlap == 0:
+        logger.info("No overlap — audit not needed.")
+        return None
+
+    # Evaluate on full set vs overlap-excluded set
+    df_clean = df[~df["tox_train_overlap"]].reset_index(drop=True)
+    logger.info(f"After removing overlaps: {len(df_clean)} candidates")
+
+    strategies = ["activity_only", "toxicity_exclusion", "weighted_sum",
+                  "random", "rule_only"]
+
+    header = f"{'Strategy':<25} {'Full TopK':>10} {'Clean TopK':>11} {'Delta':>7}"
+    logger.info(header)
+    logger.info("-" * len(header))
+
+    audit_results = {}
+    for strat in strategies:
+        ranked_full = rank_candidates(df, strategy=strat)
+        ranked_clean = rank_candidates(df_clean, strategy=strat)
+        m_full = evaluate_ranking(df, ranked_full, k=k)
+        m_clean = evaluate_ranking(df_clean, ranked_clean, k=k)
+        delta = m_clean["topk_enrichment"] - m_full["topk_enrichment"]
+        logger.info(f"{strat:<25} {m_full['topk_enrichment']:>10.4f} "
+                    f"{m_clean['topk_enrichment']:>11.4f} {delta:>+7.4f}")
+        audit_results[strat] = {
+            "full": m_full, "clean": m_clean, "delta": delta
+        }
+
+    return audit_results
+
+
 def main():
     """Run evaluation for all baseline strategies."""
     parser = argparse.ArgumentParser(description="Evaluate ranking policies")
@@ -295,6 +348,8 @@ def main():
     parser.add_argument("--strategy", default=None,
                         help="Single strategy to evaluate (default: all baselines)")
     parser.add_argument("--k", type=int, default=20, help="Top-k for metrics")
+    parser.add_argument("--audit-overlap", action="store_true",
+                        help="Run ToxinPred3 overlap audit")
     args = parser.parse_args()
 
     strategies = (
@@ -338,6 +393,10 @@ def main():
                 f"{strat:<25} {m['topk_enrichment']:>12.4f} {m['ndcg']:>8.4f} "
                 f"{m['hypervolume']:>8.4f} {m.get('topk_feasible_frac',0):>10.4f}"
             )
+
+    # Overlap audit
+    if args.audit_overlap:
+        run_overlap_audit(split=args.split, k=args.k)
 
     return results
 
