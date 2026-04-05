@@ -57,13 +57,31 @@ python -m pytest tests/ -v
 |---|---|---|---|---|
 | activity_only | 0.083 | 0.62 | 0.29 | 0.00 |
 | toxicity_exclusion | 0.300 | 0.79 | 0.53 | 1.00 |
-| **weighted_sum** | **0.517** | **0.89** | **0.57** | **0.55** |
+| weighted_sum | 0.517 | 0.89 | 0.57 | 0.55 |
+| **agent_improved** | **0.550** | **0.94** | **0.56** | **0.80** |
 | rule_only | 0.367 | 0.83 | 0.51 | 0.50 |
 | random | 0.017 | 0.52 | 0.43 | 0.15 |
 
 **Candidate pool:** 3,554 antimicrobial peptides from DBAASP (E. coli ATCC 25922).
 **TopK enrichment is the mean across three oracle definitions** (Pareto rank,
 rank product, threshold-gated). See "Benchmark honesty" below.
+
+### Current official best policy
+
+The official winner after Prompt 3 and Prompt 3b is `agent_improved` in
+`src/rank.py`, using the same weighted-sum policy class as `weighted_sum`
+with tuned weights:
+
+```text
+score =
+  0.45 * norm(activity)
+  - 0.40 * norm(toxicity)
+  + 0.25 * norm(stability)
+  - 0.15 * norm(dev_penalty)
+```
+
+Prompt 3b produced nearby **ties** but no clean primary-metric win, so the
+official policy was **not** changed. See `docs/prompt3-summary.md`.
 
 ## Repository structure
 
@@ -164,10 +182,13 @@ framework, not about solving peptide drug discovery.
 **Phase 1: Scaffold** — complete.
 **Phase 2: Fixed harness** — complete. All endpoint models trained,
 baseline policies evaluated, end-to-end pipeline works.
+**Phase 3: Initial loop and local robustness check** — complete.
+`agent_improved` is the current official winner over the original
+`weighted_sum` baseline.
 
-**Next:** Phase 3 — run the autoresearch loop (Prompt 3). Agent edits
-`src/rank.py` iteratively to improve top-k enrichment over the
-`weighted_sum` baseline (0.50).
+**Next recommended stage:** stop optimization here, preserve the current
+winner, and begin the next explicitly scoped evaluation or reporting phase
+from `docs/prompt3-summary.md`.
 
 ## References
 
