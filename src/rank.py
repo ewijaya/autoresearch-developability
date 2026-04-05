@@ -159,7 +159,7 @@ def _reciprocal_rank_fusion_score(*scores, c=10.0):
 
 
 def _rank_agent_improved(df, **kwargs):
-    """Two-stage oracle-consensus policy with reciprocal-rank fusion rerank."""
+    """Prioritize consensus shortlist members before reciprocal-rank fallback."""
     gate_score = _threshold_gate_score(df)
     rank_product_score = _rank_product_score(df)
     pareto_score = _pareto_score(df)
@@ -170,18 +170,25 @@ def _rank_agent_improved(df, **kwargs):
     )
 
     shortlist_size = min(20, len(df))
-    shortlist = []
+    shortlist_votes = {}
     for score in (gate_score, rank_product_score, pareto_score):
-        shortlist.extend(score.sort_values(ascending=False).index[:shortlist_size])
-    shortlist = list(dict.fromkeys(shortlist))
+        for idx in score.sort_values(ascending=False).index[:shortlist_size]:
+            shortlist_votes[idx] = shortlist_votes.get(idx, 0) + 1
+
+    consensus_shortlist = [
+        idx for idx, votes in shortlist_votes.items()
+        if votes >= 2
+    ]
+    if not consensus_shortlist:
+        return fusion_score.sort_values(ascending=False).index.tolist()
 
     reranked_shortlist = (
-        df.loc[shortlist]
+        df.loc[consensus_shortlist]
         .assign(
-            fusion_score=fusion_score.loc[shortlist],
-            gate_score=gate_score.loc[shortlist],
-            rank_product_score=rank_product_score.loc[shortlist],
-            pareto_score=pareto_score.loc[shortlist],
+            fusion_score=fusion_score.loc[consensus_shortlist],
+            gate_score=gate_score.loc[consensus_shortlist],
+            rank_product_score=rank_product_score.loc[consensus_shortlist],
+            pareto_score=pareto_score.loc[consensus_shortlist],
         )
         .sort_values(
             [
@@ -196,9 +203,10 @@ def _rank_agent_improved(df, **kwargs):
         .index.tolist()
     )
 
+    consensus_set = set(consensus_shortlist)
     remaining_rank = [
         idx for idx in fusion_score.sort_values(ascending=False).index
-        if idx not in set(shortlist)
+        if idx not in consensus_set
     ]
     return reranked_shortlist + remaining_rank
 
