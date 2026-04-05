@@ -460,8 +460,8 @@ def main():
                         help="Name for this run (directory name)")
     parser.add_argument("--program", default="program.md",
                         help="Program file for the agent (default: program.md)")
-    parser.add_argument("--experiments", type=int, default=50,
-                        help="Target number of experiments (default: 50)")
+    parser.add_argument("--experiments", type=int, default=100,
+                        help="Target number of experiments (default: 100)")
     parser.add_argument("--dry-run", action="store_true",
                         help="Print prompt without launching Codex")
     args = parser.parse_args()

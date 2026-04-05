@@ -20,7 +20,7 @@ set -euo pipefail
 WITH_LOOP=false
 LOOP_ONLY=false
 RUN_NAME="prompt5"
-EXPERIMENTS=50
+EXPERIMENTS=100
 
 for arg in "$@"; do
     case "$arg" in

@@ -40,12 +40,12 @@ def _load_esm_embeddings_for_training(sequences: list) -> np.ndarray | None:
     from src.prepare import generate_esm_embeddings
     import tempfile
 
-    with tempfile.NamedTemporaryFile(suffix=".npy", delete=False) as tmp:
-        tmp_path = Path(tmp.name)
+    tmp_path = Path(tempfile.mkdtemp()) / "tox_esm_embeddings.npy"
 
     embeddings = generate_esm_embeddings(sequences, tmp_path)
     if tmp_path.exists():
         tmp_path.unlink()
+        tmp_path.parent.rmdir()
     return embeddings
 
 
