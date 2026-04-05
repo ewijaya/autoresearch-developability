@@ -1,0 +1,7 @@
+commit	strategy	summary_metric	topk_enrichment	ndcg	hypervolume	topk_feasible_frac	n_candidates	k	status	description
+3a41c14	agent_improved	0.6833	0.6833	0.9715	0.5853	0.7500	533	20	keep	baseline agent_improved
+3a41c14	agent_improved	0.7000	0.7000	0.9735	0.5976	0.8000	533	20	keep	increased agent_improved weights to activity=0.50 toxicity=0.50 stability=0.30 while keeping dev_penalty=0.15
+3a41c14	agent_improved	0.6667	0.6667	0.9757	0.5684	0.7500	533	20	discard	increased agent_improved stability weight from 0.30 to 0.35 while keeping activity=0.50 toxicity=0.50 and dev_penalty=0.15
+29c21af	agent_improved	0.6833	0.6833	0.9790	0.5976	0.8000	533	20	discard	added toxicity<=0.7 and dev_penalty<=3 feasibility-first partition ahead of the current weighted agent_improved score
+29c21af	agent_improved	0.7000	0.7000	0.9735	0.5976	0.8000	533	20	discard	added soft squared penalties above toxicity>0.7 and dev_penalty>3.0 on top of the current agent_improved weighted score
+29c21af	agent_improved	0.6500	0.6500	0.9820	0.5737	0.8500	533	20	discard	added a 0.15 min(activity_norm, 1-toxicity_norm) activity-safety balance bonus on top of the current agent_improved weighted score

@@ -18,11 +18,20 @@ data/raw/*
 data/processed/*
 !data/processed/.gitkeep
 
-# Results (generated, not checked in except selected baselines and loop logs)
-results/loops/*
+# Results (generated, not checked in except loop results and summaries)
+results/loops/*/workspace/
+results/loops/*/logs/
+results/loops/*/diffs/
+results/loops/*/rank_versions/
+results/loops/*/.state/
+results/loops/*/agent_session.log
+results/loops/*/last_message.txt
+results/loops/*/prompt.txt
 results/ablations/*
 results/figures/*
-!results/loops/*.tsv
+results/run_all.log
+!results/loops/**/results.tsv
+!results/loops/**/summary.json
 !results/loops/.gitkeep
 !results/ablations/.gitkeep
 !results/figures/.gitkeep
