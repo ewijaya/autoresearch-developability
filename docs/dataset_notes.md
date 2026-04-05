@@ -187,6 +187,8 @@ developability scoring. Activity comes from DBAASP ground truth.
 
 ## Data size estimates
 
+**Estimated (pre-implementation):**
+
 | Source | Expected peptides | Expected usable after filtering |
 |---|---|---|
 | DBAASP v4 (full) | ~20,000+ | ~5,000-10,000 (with MIC for reference organism) |
@@ -194,9 +196,33 @@ developability scoring. Activity comes from DBAASP ground truth.
 | HLP | ~1,000-2,000 | ~800-1,500 |
 | Developability | Computed for all | All candidates |
 
-The candidate pool for ranking will be the DBAASP subset with valid
-activity labels. Other endpoints are predicted or computed for all
-candidates.
+**Actual (post-implementation):**
+
+| Source | Total records | After filtering | Notes |
+|---|---|---|---|
+| DBAASP E. coli ATCC 25922 | 8,059 listed, 5,180 with MIC detail | 3,554 unique | Filtered: length 5-50, standard AA only, exact dedup |
+| ToxinPred3 train | 8,828 | 8,828 valid | 4,414 toxic + 4,414 non-toxic |
+| HLP | 375 | 375 valid | 189 10-mer + 186 16-mer |
+| Developability | All candidates | 3,554 | Rule-based, computed for all |
+
+**Splits (random, mmseqs2 not available):**
+
+| Split | Peptides |
+|---|---|
+| Train | 2,487 |
+| Val | 533 |
+| Test | 534 |
+
+**Endpoint model performance:**
+
+| Model | Metric | Value | Training data |
+|---|---|---|---|
+| Toxicity RF | Train AUC | 0.988 | 8,828 ToxinPred3 sequences |
+| Stability RF | Train R² | 0.824 | 375 HLP sequences |
+
+The candidate pool for ranking is the DBAASP subset with valid
+activity labels. Toxicity and stability are predicted by RF models.
+Developability is computed by rules.
 
 ---
 

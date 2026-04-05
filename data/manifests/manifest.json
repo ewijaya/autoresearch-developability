@@ -1,0 +1,43 @@
+{
+  "total_candidates": 3554,
+  "split_method": "random",
+  "activity_source": "DBAASP_v4_Ecoli_ATCC_25922",
+  "toxicity_source": "ToxinPred3_RF",
+  "stability_source": "HLP_RF",
+  "developability_source": "rule_based",
+  "sequence_representation": "AAindex_physicochemical",
+  "min_length": 5,
+  "max_length": 50,
+  "splits": {
+    "train_ratio": 0.7,
+    "val_ratio": 0.15,
+    "test_ratio": 0.15
+  },
+  "endpoint_stats": {
+    "activity": {
+      "mean": 0.41783930552528864,
+      "std": 0.12384242666139195,
+      "min": 0.0,
+      "max": 1.0
+    },
+    "toxicity": {
+      "mean": 0.6850077141090937,
+      "std": 0.16474307871071764,
+      "min": 0.036655351078343903,
+      "max": 0.975657287157287
+    },
+    "stability": {
+      "mean": 0.11474525125834124,
+      "std": 0.09517953958324332,
+      "min": 0.0,
+      "max": 1.0
+    },
+    "dev_penalty": {
+      "mean": 0.7798255486775464,
+      "std": 0.6613369710791327,
+      "min": 0.0,
+      "max": 3.5
+    }
+  },
+  "data_hash": "3a8d37c19ac40b37f50c0d0a795827e3"
+}

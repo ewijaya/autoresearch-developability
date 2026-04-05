@@ -35,6 +35,34 @@ peptide triage on public data?**
 The public benchmark is the proof-of-concept. The framework is designed
 for obvious portability to proprietary peptide data.
 
+## Quickstart
+
+```bash
+# 1. Prepare data (downloads DBAASP, ToxinPred3, HLP; ~10 min first run)
+python -m src.prepare
+
+# 2. Evaluate all baseline ranking policies
+python -m src.evaluate
+
+# 3. Evaluate a single strategy
+python -m src.evaluate --strategy weighted_sum --split val --k 20
+
+# 4. Run tests
+python -m pytest tests/ -v
+```
+
+### Current benchmark numbers (val split, k=20)
+
+| Strategy | TopK Enrichment | NDCG | Hypervolume | Feasible |
+|---|---|---|---|---|
+| activity_only | 0.10 | 0.71 | 0.29 | 0.00 |
+| toxicity_exclusion | 0.35 | 0.76 | 0.53 | 1.00 |
+| **weighted_sum** | **0.50** | **0.82** | **0.57** | **0.55** |
+| random | 0.00 | 0.43 | 0.43 | 0.15 |
+| rule_only | 0.25 | 0.67 | 0.51 | 0.50 |
+
+**Candidate pool:** 3,554 antimicrobial peptides from DBAASP (E. coli ATCC 25922).
+
 ## Repository structure
 
 ```
@@ -45,19 +73,17 @@ autoresearch-developability/
 │   ├── prepare.py             # Fixed: data loading, splits, leakage control
 │   ├── rank.py                # EDITABLE: ranking policy (agent modifies this)
 │   ├── evaluate.py            # Fixed: ranking metrics
-│   ├── endpoint_activity.py   # Fixed: activity scoring
-│   ├── endpoint_toxicity.py   # Fixed: toxicity scoring
-│   ├── endpoint_stability.py  # Fixed: stability scoring
-│   └── endpoint_dev.py        # Fixed: developability proxies
+│   ├── features.py            # Fixed: AAindex physicochemical features
+│   ├── endpoint_activity.py   # Fixed: activity scoring (DBAASP MIC)
+│   ├── endpoint_toxicity.py   # Fixed: toxicity scoring (ToxinPred3 RF)
+│   ├── endpoint_stability.py  # Fixed: stability scoring (HLP RF)
+│   └── endpoint_dev.py        # Fixed: developability proxies (rule-based)
 ├── data/
 │   ├── raw/                   # Downloaded public datasets
 │   ├── processed/             # Harmonized benchmark files
 │   └── manifests/             # Dataset metadata and download records
-├── results/
-│   ├── baseline/              # Baseline policy outputs
-│   ├── loops/                 # Autoresearch loop experiment logs
-│   ├── ablations/             # Ablation study outputs
-│   └── figures/               # Paper-quality visualizations
+├── results/                   # Experiment outputs
+├── results.tsv                # Machine-readable experiment log
 ├── docs/
 │   ├── PRD.md                 # Product requirements document
 │   ├── dataset_notes.md       # Dataset selection rationale
@@ -98,11 +124,13 @@ See `program.md` for the full agent operating rules.
 
 ## Status
 
-**Phase 1: Scaffold** — complete. Repo structure, program.md, dataset
-plan, paper outline, and baseline ranking policies are defined.
+**Phase 1: Scaffold** — complete.
+**Phase 2: Fixed harness** — complete. All endpoint models trained,
+baseline policies evaluated, end-to-end pipeline works.
 
-**Next:** Phase 2 — implement the fixed harness (`prepare.py`, `evaluate.py`,
-endpoint modules) and run one end-to-end dry run.
+**Next:** Phase 3 — run the autoresearch loop (Prompt 3). Agent edits
+`src/rank.py` iteratively to improve top-k enrichment over the
+`weighted_sum` baseline (0.50).
 
 ## References
 
