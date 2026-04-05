@@ -39,6 +39,14 @@ def rank_candidates(df, strategy="weighted_sum", **kwargs):
     return rankers[strategy](df, **kwargs)
 
 
+def _norm(s):
+    """Min-max normalize a Series to [0, 1]."""
+    r = s.max() - s.min()
+    if r == 0:
+        return s * 0.0
+    return (s - s.min()) / r
+
+
 # --- Baseline policies (frozen after initial implementation) ---
 
 
@@ -64,13 +72,6 @@ def _rank_weighted_sum(df, weights=None, **kwargs):
     if weights is None:
         weights = {"activity": 0.25, "toxicity": 0.25,
                    "stability": 0.25, "dev_penalty": 0.25}
-
-    # Normalize each column to [0, 1]
-    def _norm(s):
-        r = s.max() - s.min()
-        if r == 0:
-            return s * 0.0
-        return (s - s.min()) / r
 
     score = (
         weights["activity"] * _norm(df["activity"])
@@ -105,14 +106,21 @@ def _rank_rule_only(df, **kwargs):
     ).index.tolist()
 
 
-def _rank_agent_improved(df, **kwargs):
-    """Tuned linear policy discovered in the loop.
+def _threshold_gate_score(df):
+    """Nonlinear score that emphasizes safe, stable activity."""
+    act = _norm(df["activity"])
+    tox = _norm(df["toxicity"])
+    stab = _norm(df["stability"])
+    dev = _norm(df["dev_penalty"])
 
-    Keeps the same interpretable scalarization as ``weighted_sum`` but
-    puts equal weight on activity and toxicity while slightly increasing
-    stability, keeping developability as a lighter penalty.
-    """
-    return _rank_weighted_sum(
+    tox_gate = 1.0 / (1.0 + np.exp(10.0 * (tox - 0.5)))
+    dev_gate = 1.0 / (1.0 + np.exp(10.0 * (dev - 0.5)))
+    return act * (0.3 + 0.7 * stab) * tox_gate * dev_gate
+
+
+def _rank_agent_improved(df, **kwargs):
+    """Two-stage policy: linear shortlist, nonlinear rerank inside top-20."""
+    base_rank = _rank_weighted_sum(
         df,
         weights={
             "activity": 0.50,
@@ -122,6 +130,17 @@ def _rank_agent_improved(df, **kwargs):
         },
         **kwargs,
     )
+
+    shortlist_size = min(20, len(base_rank))
+    if shortlist_size == 0:
+        return base_rank
+
+    gate_score = _threshold_gate_score(df)
+    shortlist = base_rank[:shortlist_size]
+    reranked_shortlist = gate_score.loc[shortlist].sort_values(
+        ascending=False
+    ).index.tolist()
+    return reranked_shortlist + base_rank[shortlist_size:]
 
 
 # --- Learnable policies (require optional dependencies) ---
