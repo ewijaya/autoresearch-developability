@@ -56,6 +56,8 @@ ALL_STRATEGIES = [
     "agent_improved",
     "rule_only",
     "random",
+    "random_weight_search",
+    "nsga2_crowding",
 ]
 
 # Strategies that require trained models and won't work on synthetic data
@@ -471,6 +473,8 @@ def figure1_baseline_comparison(split: str = "val", k: int = 20):
         "agent_improved": "Agent\nImproved",
         "rule_only": "Rule\nOnly",
         "random": "Random",
+        "random_weight_search": "Random\nWeight Search",
+        "nsga2_crowding": "NSGA-II\nCrowding",
     }
     metrics_to_plot = ["topk_enrichment", "ndcg", "topk_feasible_frac"]
     metric_labels = {

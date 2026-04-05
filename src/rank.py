@@ -109,15 +109,15 @@ def _rank_agent_improved(df, **kwargs):
     """Tuned linear policy discovered in the loop.
 
     Keeps the same interpretable scalarization as ``weighted_sum`` but
-    shifts emphasis toward activity and toxicity, treating stability as
-    secondary and developability as a lighter penalty.
+    puts equal weight on activity and toxicity while slightly increasing
+    stability, keeping developability as a lighter penalty.
     """
     return _rank_weighted_sum(
         df,
         weights={
-            "activity": 0.45,
-            "toxicity": 0.40,
-            "stability": 0.25,
+            "activity": 0.50,
+            "toxicity": 0.50,
+            "stability": 0.30,
             "dev_penalty": 0.15,
         },
         **kwargs,
