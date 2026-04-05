@@ -159,7 +159,7 @@ def _reciprocal_rank_fusion_score(*scores, c=10.0):
 
 
 def _rank_agent_improved(df, **kwargs):
-    """Prioritize consensus shortlist members before reciprocal-rank fallback."""
+    """Prioritize consensus shortlist members, then rerank with an ensemble."""
     gate_score = _threshold_gate_score(df)
     rank_product_score = _rank_product_score(df)
     pareto_score = _pareto_score(df)
@@ -181,6 +181,42 @@ def _rank_agent_improved(df, **kwargs):
     ]
     if not consensus_shortlist:
         return fusion_score.sort_values(ascending=False).index.tolist()
+
+    try:
+        from src.rank_learnable import train_lambdamart_ranker
+
+        model_data = train_lambdamart_ranker()
+    except Exception:
+        model_data = None
+
+    if model_data is not None:
+        lambdamart_score = df["activity"] * 0.0 + model_data["model"].predict(
+            df[["activity", "toxicity", "stability", "dev_penalty"]]
+        )
+        ensemble_score = _reciprocal_rank_fusion_score(
+            lambdamart_score,
+            gate_score,
+            rank_product_score,
+            pareto_score,
+        )
+        return (
+            df.assign(
+                consensus_flag=df.index.isin(consensus_shortlist).astype(int),
+                ensemble_score=ensemble_score,
+                lambdamart_score=lambdamart_score,
+                fusion_score=fusion_score,
+            )
+            .sort_values(
+                [
+                    "consensus_flag",
+                    "ensemble_score",
+                    "lambdamart_score",
+                    "activity",
+                ],
+                ascending=[False, False, False, False],
+            )
+            .index.tolist()
+        )
 
     reranked_shortlist = (
         df.loc[consensus_shortlist]
