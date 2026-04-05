@@ -412,7 +412,96 @@ That is publishable and believable.
 
 ---
 
-## 17. 90-Day Build Plan
+## 17. AWS Cost-Minimizing Infrastructure Recommendation
+
+The goal is to **save money aggressively** while still preserving the value of the Karpathy-style loop.
+
+### 17.1 Strong Recommendation
+
+Use a **two-phase infrastructure strategy**:
+
+#### Phase A: CPU-first development
+Do all of the following on a cheap CPU instance:
+- repo scaffolding
+- dataset download and cleaning
+- split generation and leakage checks
+- baseline rule-based developability scoring
+- initial evaluation harness
+- first version of `rank.py`
+- metric debugging
+- figure generation and paper drafting
+
+**Recommended instance:**
+- `c7i.large` or `c7a.large` if available and cheap
+- fallback: `t3.large` only for light work, not for heavier preprocessing
+
+**Reason:**
+A GPU is wasted until the benchmark, metrics, and loop are stable.
+
+#### Phase B: single modest GPU only when the loop is ready
+Use GPU only for:
+- neural toxicity/stability/activity models
+- repeated loop iterations
+- PLM embedding generation at non-trivial scale
+- overnight policy/model experiments
+
+**Recommended instance:**
+- **best default:** `g5.xlarge`
+- **buy mode:** prefer **spot** when practical
+- **fallback:** `g4dn.xlarge` if materially cheaper and still available
+- **avoid at start:** bigger GPU instances, multi-GPU instances, p4/p5 class, or anything "boss-impressive" but financially stupid
+
+### 17.2 Exact Cost Strategy
+
+#### Cheapest workable setup
+- **CPU dev:** `c7i.large` or similar
+- **GPU runs:** `g5.xlarge` on spot
+- run GPU only during actual experiments
+- stop instance immediately after runs
+- store outputs to EBS or S3, not in a perpetually running machine
+
+This is the recommended default.
+
+#### Balanced setup
+- one always-available small CPU box for repo work
+- one on-demand or spot `g5.xlarge` started only when needed
+- separate scripts for CPU prep vs GPU experiment execution
+
+#### What not to do
+- do not start on a GPU just because the project sounds ML-heavy
+- do not leave a GPU running while writing docs or cleaning CSVs
+- do not use giant instances before the fixed harness is proven
+- do not optimize infrastructure before proving scientific signal
+
+### 17.3 PRD-Level Infrastructure Decision
+
+For `autoresearch-developability`, the official recommendation is:
+
+1. **Start CPU-only** until the fixed multi-objective harness works end-to-end
+2. **Move to one `g5.xlarge` GPU** only when neural models or repeated autoresearch loops become the bottleneck
+3. **Treat GPU time as experimental capital, not background electricity**
+
+### 17.4 Trigger for Switching to GPU
+
+Switch from CPU to GPU only when **all** of the following are true:
+- public benchmark bundle is fixed
+- train/val/test leakage checks are complete
+- ranking metrics are finalized
+- baseline policies run end-to-end
+- the next bottleneck is clearly model training speed, not repo or metric design
+
+### 17.5 Why This Matters
+
+This repo is meant to prove scientific value cheaply.
+The winning optics inside StemRIM are not:
+"I rented expensive compute."
+
+The winning optics are:
+"I built a credible public proof-of-concept cheaply, and now I know exactly where GPU time creates value."
+
+That is much more persuasive.
+
+## 18. 90-Day Build Plan
 
 ### Phase 1: scaffold the repo
 - create the repo and initial file layout
@@ -446,7 +535,7 @@ That is publishable and believable.
 
 ---
 
-## 18. What the New Agent Should Do First
+## 19. What the New Agent Should Do First
 
 A new agent session starting on this repo should do the following in order:
 
@@ -463,7 +552,7 @@ A new agent session starting on this repo should do the following in order:
 
 ---
 
-## 19. Explicit Instructions to the Agent
+## 20. Explicit Instructions to the Agent
 
 When continuing this repo, the agent should follow these instructions exactly:
 
@@ -478,7 +567,7 @@ When continuing this repo, the agent should follow these instructions exactly:
 
 ---
 
-## 20. Definition of Done for v1
+## 21. Definition of Done for v1
 
 v1 is done when all of the following are true:
 
@@ -492,7 +581,7 @@ v1 is done when all of the following are true:
 
 ---
 
-## 21. Final Strategic Note
+## 22. Final Strategic Note
 
 The mission of this repo is not merely to build a nice GitHub project.
 
