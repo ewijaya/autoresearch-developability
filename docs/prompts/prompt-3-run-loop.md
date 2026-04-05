@@ -2,6 +2,18 @@
 
 Use this only **after the fixed harness is working**. This prompt is for starting the actual **Karpathy-style iterative loop** with a tightly constrained editable surface.
 
+## Recommended AWS Instance
+
+**Best choice:** single modest GPU
+
+- **Recommended:** `g5.xlarge`
+- **Buy mode:** prefer **spot** whenever practical
+- **CPU companion box (optional):** `c7i.large`
+- **GPU needed?** Yes, if the loop involves repeated neural evaluations or embedding-heavy scoring
+
+### Why
+This is the first stage where speed starts to matter. The whole point of the Karpathy loop is rapid iteration. A single `g5.xlarge` is the cheapest sane GPU choice for that. Do not scale up before the loop proves value.
+
 ```text
 you are continuing work in:
 https://github.com/ewijaya/autoresearch-developability

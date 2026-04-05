@@ -2,6 +2,17 @@
 
 Use this to start the project correctly. This prompt is for **orientation, repo scaffolding, and disciplined setup**. It is **not** for full implementation.
 
+## Recommended AWS Instance
+
+**Best choice:** CPU only
+
+- **Recommended:** `c7i.large` or `c7a.large`
+- **Cheapest acceptable fallback:** `t3.large`
+- **GPU needed?** No
+
+### Why
+This stage is mostly reading, planning, structuring the repo, choosing datasets, and writing documents. Paying for a GPU here would be dumb.
+
 ```text
 you are working in the repo:
 https://github.com/ewijaya/autoresearch-developability

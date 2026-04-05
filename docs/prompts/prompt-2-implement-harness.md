@@ -2,6 +2,17 @@
 
 Use this only **after Prompt 1 is done and reviewed**. This prompt is for building the **fixed evaluation harness** and making one complete end-to-end dry run possible.
 
+## Recommended AWS Instance
+
+**Best choice:** CPU first, GPU optional only if a real bottleneck appears
+
+- **Recommended default:** `c7i.large` or `c7a.large`
+- **If preprocessing or small model fitting starts dragging:** temporary `g5.xlarge` on spot
+- **GPU needed?** Usually no for the first harness pass
+
+### Why
+The main risk in this phase is not compute starvation. It is building a bad harness. Correctness matters more than speed. Stay on CPU unless a concrete training bottleneck appears.
+
 ```text
 you are continuing work in:
 https://github.com/ewijaya/autoresearch-developability

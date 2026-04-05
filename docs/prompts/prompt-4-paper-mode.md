@@ -2,6 +2,17 @@
 
 Use this only **after the harness works and the loop has produced real results**. This prompt is for turning the repo output into a **publishable paper-grade package**.
 
+## Recommended AWS Instance
+
+**Best choice:** mostly CPU, with burst GPU only for missing ablations
+
+- **Recommended default:** `c7i.large` or `c7a.large`
+- **If additional ablation runs are needed:** temporary `g5.xlarge` on spot
+- **GPU needed?** Not for writing/analysis itself. Only for final missing experiments.
+
+### Why
+Paper mode is mostly analysis, figures, writing, and honesty. That should happen on cheap CPU infrastructure. Only spin up a GPU if a critical experiment is still missing.
+
 ```text
 you are continuing work in:
 https://github.com/ewijaya/autoresearch-developability
