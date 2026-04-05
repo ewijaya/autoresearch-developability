@@ -30,6 +30,7 @@ def rank_candidates(df, strategy="weighted_sum", **kwargs):
         "weighted_sum": _rank_weighted_sum,
         "random": _rank_random,
         "rule_only": _rank_rule_only,
+        "agent_improved": _rank_agent_improved,
     }
     if strategy not in rankers:
         raise ValueError(f"Unknown strategy: {strategy}. Options: {list(rankers)}")
@@ -100,3 +101,22 @@ def _rank_rule_only(df, **kwargs):
     return pool.sort_values(
         ["stability", "activity"], ascending=[False, False]
     ).index.tolist()
+
+
+def _rank_agent_improved(df, **kwargs):
+    """Tuned linear policy discovered in the loop.
+
+    Keeps the same interpretable scalarization as ``weighted_sum`` but
+    shifts emphasis toward activity and toxicity, treating stability as
+    secondary and developability as a lighter penalty.
+    """
+    return _rank_weighted_sum(
+        df,
+        weights={
+            "activity": 0.45,
+            "toxicity": 0.40,
+            "stability": 0.25,
+            "dev_penalty": 0.15,
+        },
+        **kwargs,
+    )

@@ -4,3 +4,7 @@ commit	strategy	summary_metric	topk_enrichment	ndcg	hypervolume	topk_feasible_fr
 2b8194c	weighted_sum	0.5167	0.5167	0.8938	0.5674	0.5500	533	20	baseline	Baseline weighted_sum on val
 2b8194c	random	0.0167	0.0167	0.5186	0.4292	0.1500	533	20	baseline	Baseline random on val
 2b8194c	rule_only	0.3667	0.3667	0.8310	0.5127	0.5000	262	20	baseline	Baseline rule_only on val
+2ec8089	agent_improved	0.5500	0.5500	0.9365	0.5640	0.8000	533	20	keep	Retuned weighted scalarization to prioritize activity and toxicity, with secondary stability and lighter developability penalty.
+2ec8089	exp_rank_product	0.5333	0.5333	0.8448	0.5674	0.5500	533	20	discard	Tried pure four-endpoint rank-product aggregation; it improved only the rank-product oracle and regressed from the current best mean.
+2ec8089	exp_soft_gate	0.4833	0.4833	0.9788	0.4738	0.9000	533	20	discard	Tried a soft threshold-gated multiplicative policy; it boosted the threshold-gate oracle but regressed the mean and rank-product diagnostics.
+2ec8089	exp_pareto_bonus	0.5500	0.5500	0.9130	0.5771	0.7000	533	20	discard	Tried Pareto-front layering with a linear tie-break; it matched the mean but added complexity and underperformed the current best on NDCG.
