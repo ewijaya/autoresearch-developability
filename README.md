@@ -89,6 +89,7 @@ official policy was **not** changed. See `docs/prompt3-summary.md`.
 autoresearch-developability/
 ├── program.md                 # Agent operating manual
 ├── pyproject.toml             # Dependencies
+├── results.tsv                # Top-level loop log snapshot / compatibility copy
 ├── src/
 │   ├── prepare.py             # Fixed: data loading, splits, leakage control
 │   ├── rank.py                # EDITABLE: ranking policy (agent modifies this)
@@ -102,12 +103,17 @@ autoresearch-developability/
 │   ├── raw/                   # Downloaded public datasets
 │   ├── processed/             # Harmonized benchmark files
 │   └── manifests/             # Dataset metadata and download records
-├── results/                   # Experiment outputs
-├── results.tsv                # Machine-readable experiment log
+├── results/
+│   ├── baseline/              # Baseline evaluation outputs
+│   ├── loops/                 # Archived loop-session logs
+│   │   └── prompt3_prompt3b_results.tsv
+│   ├── ablations/             # Reserved for ablation outputs
+│   └── figures/               # Reserved for figures
 ├── docs/
 │   ├── PRD.md                 # Product requirements document
 │   ├── dataset_notes.md       # Dataset selection rationale
-│   └── paper_outline.md       # Paper structure and claim plan
+│   ├── paper_outline.md       # Paper structure and claim plan
+│   └── prompt3-summary.md     # Prompt 3 / 3b checkpoint and official winner
 └── tests/
 ```
 
@@ -117,12 +123,20 @@ autoresearch-developability/
 1. Establish baseline (current rank.py)
 2. Make one coherent policy change
 3. Run evaluation harness
-4. Log result in results.tsv
+4. Log result in `results/loops/<session>.tsv` (optionally mirror to `results.tsv`)
 5. Keep if metrics improve, discard if they regress
 6. Repeat
 ```
 
 See `program.md` for the full agent operating rules.
+
+### Loop log location
+
+Future loop-session logs should be written under `results/loops/` using a
+session-specific filename such as `results/loops/prompt4_results.tsv`.
+The root `results.tsv` is kept as a top-level snapshot / compatibility file;
+`docs/prompt3-summary.md` is the narrative checkpoint for the current official
+winner.
 
 ## Baselines
 

@@ -18,10 +18,11 @@ data/raw/*
 data/processed/*
 !data/processed/.gitkeep
 
-# Results (generated, not checked in except baselines)
+# Results (generated, not checked in except selected baselines and loop logs)
 results/loops/*
 results/ablations/*
 results/figures/*
+!results/loops/*.tsv
 !results/loops/.gitkeep
 !results/ablations/.gitkeep
 !results/figures/.gitkeep

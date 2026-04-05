@@ -1,0 +1,20 @@
+commit	strategy	summary_metric	topk_enrichment	ndcg	hypervolume	topk_feasible_frac	n_candidates	k	status	description
+2b8194c	activity_only	0.0833	0.0833	0.6167	0.2864	0.0000	533	20	baseline	Baseline activity_only on val
+2b8194c	toxicity_exclusion	0.3000	0.3000	0.7883	0.5327	1.0000	85	20	baseline	Baseline toxicity_exclusion on val
+2b8194c	weighted_sum	0.5167	0.5167	0.8938	0.5674	0.5500	533	20	baseline	Baseline weighted_sum on val
+2b8194c	random	0.0167	0.0167	0.5186	0.4292	0.1500	533	20	baseline	Baseline random on val
+2b8194c	rule_only	0.3667	0.3667	0.8310	0.5127	0.5000	262	20	baseline	Baseline rule_only on val
+2ec8089	agent_improved	0.5500	0.5500	0.9365	0.5640	0.8000	533	20	keep	Retuned weighted scalarization to prioritize activity and toxicity, with secondary stability and lighter developability penalty.
+2ec8089	exp_rank_product	0.5333	0.5333	0.8448	0.5674	0.5500	533	20	discard	Tried pure four-endpoint rank-product aggregation; it improved only the rank-product oracle and regressed from the current best mean.
+2ec8089	exp_soft_gate	0.4833	0.4833	0.9788	0.4738	0.9000	533	20	discard	Tried a soft threshold-gated multiplicative policy; it boosted the threshold-gate oracle but regressed the mean and rank-product diagnostics.
+2ec8089	exp_pareto_bonus	0.5500	0.5500	0.9130	0.5771	0.7000	533	20	discard	Tried Pareto-front layering with a linear tie-break; it matched the mean but added complexity and underperformed the current best on NDCG.
+a56cc3d	p3b_more_activity	0.5500	0.5500	0.9286	0.5674	0.7500	533	20	discard	Increase activity weight from 0.45 to 0.50 while holding other Prompt 3 weights fixed.
+a56cc3d	p3b_less_activity	0.5333	0.5333	0.9361	0.5640	0.8000	533	20	discard	Decrease activity weight from 0.45 to 0.40 while holding other Prompt 3 weights fixed.
+a56cc3d	p3b_more_toxicity	0.5167	0.5167	0.9340	0.5640	0.8000	533	20	discard	Increase toxicity penalty weight from 0.40 to 0.45 while holding other Prompt 3 weights fixed.
+a56cc3d	p3b_less_toxicity	0.5500	0.5500	0.9231	0.5674	0.7000	533	20	discard	Decrease toxicity penalty weight from 0.40 to 0.35 while holding other Prompt 3 weights fixed.
+a56cc3d	p3b_more_stability	0.5500	0.5500	0.9279	0.5640	0.7500	533	20	discard	Increase stability weight from 0.25 to 0.30 while holding other Prompt 3 weights fixed.
+a56cc3d	p3b_less_stability	0.5167	0.5167	0.9363	0.5640	0.8000	533	20	discard	Decrease stability weight from 0.25 to 0.20 while holding other Prompt 3 weights fixed.
+a56cc3d	p3b_more_dev	0.5333	0.5333	0.9364	0.5640	0.8000	533	20	discard	Increase developability penalty weight from 0.15 to 0.20 while holding other Prompt 3 weights fixed.
+a56cc3d	p3b_less_dev	0.5333	0.5333	0.9364	0.5640	0.8000	533	20	discard	Decrease developability penalty weight from 0.15 to 0.10 while holding other Prompt 3 weights fixed.
+a56cc3d	p3b_capped_dev	0.5500	0.5500	0.9365	0.5640	0.8000	533	20	discard	Cap normalized developability penalty at 0.60 before applying the Prompt 3 weight to avoid over-penalizing already bad sequences.
+a56cc3d	p3b_tox_power_1p5	0.5500	0.5500	0.9402	0.5640	0.7500	533	20	discard	Use a mild nonlinear toxicity penalty nt^1.5 with the Prompt 3 weights to punish highly toxic candidates slightly more strongly.
