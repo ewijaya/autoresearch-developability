@@ -513,6 +513,81 @@ def build_candidate_pool(
     return pool
 
 
+def generate_esm_embeddings(sequences: list, output_path: Path,
+                            model_name: str = "esm2_t6_8M_UR50D",
+                            batch_size: int = 64) -> np.ndarray | None:
+    """Generate ESM-2 per-sequence embeddings for all candidates.
+
+    Uses the smallest ESM-2 model (8M params) by default — fast on CPU,
+    very fast on GPU. Returns mean-pooled per-residue embeddings.
+
+    Args:
+        sequences: list of peptide sequences.
+        output_path: path to save embeddings as .npy file.
+        model_name: ESM-2 model name. Options:
+            esm2_t6_8M_UR50D   (8M, 320-dim, fast)
+            esm2_t12_35M_UR50D (35M, 480-dim, moderate)
+            esm2_t30_150M_UR50D (150M, 640-dim, needs GPU)
+        batch_size: sequences per batch.
+
+    Returns:
+        np.ndarray of shape (n_sequences, embed_dim) or None if unavailable.
+    """
+    if output_path.exists():
+        logger.info(f"ESM embeddings already exist: {output_path}")
+        return np.load(output_path)
+
+    try:
+        import torch
+        import esm
+    except ImportError:
+        logger.warning("ESM-2 not available (requires torch + fair-esm). "
+                       "Skipping embedding generation. "
+                       "Install with: pip install torch fair-esm")
+        return None
+
+    logger.info(f"Loading ESM-2 model: {model_name}...")
+    model, alphabet = esm.pretrained.load_model_and_alphabet(model_name)
+    batch_converter = alphabet.get_batch_converter()
+    model.eval()
+
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model = model.to(device)
+    logger.info(f"ESM-2 running on {device}")
+
+    all_embeddings = []
+    n = len(sequences)
+
+    for start in range(0, n, batch_size):
+        end = min(start + batch_size, n)
+        batch_seqs = [(f"seq_{i}", seq) for i, seq in
+                      enumerate(sequences[start:end])]
+
+        _, _, batch_tokens = batch_converter(batch_seqs)
+        batch_tokens = batch_tokens.to(device)
+
+        with torch.no_grad():
+            results = model(batch_tokens, repr_layers=[model.num_layers])
+
+        # Mean-pool over residue positions (excluding BOS/EOS tokens)
+        token_embeddings = results["representations"][model.num_layers]
+        # tokens: [BOS, aa1, aa2, ..., EOS, PAD, PAD, ...]
+        for i in range(len(batch_seqs)):
+            seq_len = len(batch_seqs[i][1])
+            # Positions 1..seq_len are the actual residues
+            emb = token_embeddings[i, 1:seq_len + 1, :].mean(dim=0)
+            all_embeddings.append(emb.cpu().numpy())
+
+        if (start // batch_size) % 10 == 0:
+            logger.info(f"  ESM embeddings: {end}/{n} sequences")
+
+    embeddings = np.array(all_embeddings)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    np.save(output_path, embeddings)
+    logger.info(f"Saved ESM embeddings: {embeddings.shape} to {output_path}")
+    return embeddings
+
+
 def save_manifest(pool: pd.DataFrame, split_method: str, output_dir: Path):
     """Save a manifest describing the processed dataset."""
     manifest = {
@@ -587,6 +662,12 @@ def main(skip_download: bool = False):
     logger.info("-" * 40)
     logger.info("Building candidate pool with endpoint scores...")
     pool = build_candidate_pool(dbaasp_df, RAW_DIR, RAW_DIR)
+
+    # Step 3b: ESM-2 embeddings (optional, requires torch + fair-esm)
+    logger.info("-" * 40)
+    logger.info("Generating ESM-2 embeddings (optional)...")
+    esm_path = PROCESSED_DIR / "esm_embeddings.npy"
+    generate_esm_embeddings(pool["sequence"].tolist(), esm_path)
 
     # Step 4: Split
     logger.info("-" * 40)

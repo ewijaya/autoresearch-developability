@@ -13,11 +13,21 @@ dependencies = [
 [project.optional-dependencies]
 ml = [
     "torch>=2.0",
+    "fair-esm>=2.0",
+    "lightgbm>=4.0",
 ]
 viz = [
     "matplotlib>=3.7",
     "seaborn>=0.12",
 ]
 dev = [
+    "pytest>=7.0",
+]
+all = [
+    "torch>=2.0",
+    "fair-esm>=2.0",
+    "lightgbm>=4.0",
+    "matplotlib>=3.7",
+    "seaborn>=0.12",
     "pytest>=7.0",
 ]

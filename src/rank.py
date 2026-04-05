@@ -31,6 +31,8 @@ def rank_candidates(df, strategy="weighted_sum", **kwargs):
         "random": _rank_random,
         "rule_only": _rank_rule_only,
         "agent_improved": _rank_agent_improved,
+        "mlp_learned": _rank_mlp_learned,
+        "lambdamart": _rank_lambdamart,
     }
     if strategy not in rankers:
         raise ValueError(f"Unknown strategy: {strategy}. Options: {list(rankers)}")
@@ -120,3 +122,27 @@ def _rank_agent_improved(df, **kwargs):
         },
         **kwargs,
     )
+
+
+# --- Learnable policies (require optional dependencies) ---
+
+
+def _rank_mlp_learned(df, **kwargs):
+    """MLP-based learned ranking policy.
+
+    Trains a small neural network on oracle scores from the training split,
+    then applies it to rank the given DataFrame. Requires PyTorch.
+    """
+    from src.rank_learnable import rank_mlp
+    return rank_mlp(df, **kwargs)
+
+
+def _rank_lambdamart(df, **kwargs):
+    """LightGBM-based learning-to-rank policy.
+
+    Trains a gradient-boosted tree model on oracle scores from the
+    training split, then applies it to rank the given DataFrame.
+    Requires LightGBM.
+    """
+    from src.rank_learnable import rank_lambdamart
+    return rank_lambdamart(df, **kwargs)

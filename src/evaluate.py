@@ -491,5 +491,25 @@ def main():
     return results
 
 
+# ---------------------------------------------------------------------------
+# Convenience wrappers for paper-evidence pipeline
+# (These call into src.analysis but are exposed here so that external
+# scripts can do `from src.evaluate import bootstrap_evaluate` without
+# needing to know about the analysis module.)
+# ---------------------------------------------------------------------------
+
+
+def bootstrap_evaluate(df, strategy, k=20, n_bootstrap=1000, **kwargs):
+    """Shortcut: run bootstrap CIs for one strategy. See src.analysis."""
+    from src.analysis import bootstrap_evaluate as _bootstrap
+    return _bootstrap(df, strategy, k=k, n_bootstrap=n_bootstrap, **kwargs)
+
+
+def multi_split_evaluate(n_splits=10, k=20, strategies=None):
+    """Shortcut: evaluate across multiple random splits. See src.analysis."""
+    from src.analysis import multi_split_evaluate as _multi
+    return _multi(n_splits=n_splits, k=k, strategies=strategies)
+
+
 if __name__ == "__main__":
     main()
