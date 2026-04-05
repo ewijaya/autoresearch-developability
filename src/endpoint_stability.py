@@ -179,6 +179,8 @@ def train_stability_model(data_dir: Path, save: bool = True,
             }, f)
         logger.info(f"Saved stability model to {MODEL_PATH}")
 
+    # Attach esm_used flag to model so predict_stability can check it
+    model._esm_used = esm_used
     return model
 
 
@@ -199,6 +201,8 @@ def predict_stability(sequences: list, model=None) -> list:
             data = pickle.load(f)
         model = data["model"]
         esm_used = data.get("esm_used", False)
+    else:
+        esm_used = getattr(model, "_esm_used", False)
 
     X, _, valid_mask = sequences_to_feature_matrix(sequences)
 

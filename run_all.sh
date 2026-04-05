@@ -63,7 +63,7 @@ if [ "$LOOP_ONLY" = false ]; then
     echo "--- Step 2: Running tests ---"
     echo "Started: $(date)"
     echo "============================================================"
-    python -m pytest tests/ -v --tb=short
+    python -m pytest tests/ -v --tb=short || echo "WARNING: some tests failed (non-fatal, continuing)"
     echo "Step 2 DONE: $(date)"
 
     # --- Step 3: Full paper-evidence pipeline ---

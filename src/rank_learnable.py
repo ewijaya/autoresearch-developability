@@ -167,7 +167,7 @@ def rank_mlp(df: pd.DataFrame, model_data: object = None, **kwargs) -> list:
     X_norm = (X - model_data["X_mean"]) / model_data["X_std"]
 
     with torch.no_grad():
-        scores = model(torch.from_numpy(X_norm)).squeeze().numpy()
+        scores = model(torch.from_numpy(X_norm).float()).squeeze().numpy()
 
     # Higher score = better candidate
     ranked_idx = np.argsort(-scores)

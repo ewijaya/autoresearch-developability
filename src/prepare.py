@@ -658,16 +658,17 @@ def main(skip_download: bool = False):
                      "Check DBAASP data quality.")
         sys.exit(1)
 
-    # Step 3: Build candidate pool with all endpoint scores
+    # Step 3a: ESM-2 embeddings for candidate pool (optional, before model training)
+    logger.info("-" * 40)
+    logger.info("Generating ESM-2 embeddings for candidate pool (optional)...")
+    PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
+    esm_path = PROCESSED_DIR / "esm_embeddings.npy"
+    generate_esm_embeddings(dbaasp_df["sequence"].tolist(), esm_path)
+
+    # Step 3b: Build candidate pool with all endpoint scores
     logger.info("-" * 40)
     logger.info("Building candidate pool with endpoint scores...")
     pool = build_candidate_pool(dbaasp_df, RAW_DIR, RAW_DIR)
-
-    # Step 3b: ESM-2 embeddings (optional, requires torch + fair-esm)
-    logger.info("-" * 40)
-    logger.info("Generating ESM-2 embeddings (optional)...")
-    esm_path = PROCESSED_DIR / "esm_embeddings.npy"
-    generate_esm_embeddings(pool["sequence"].tolist(), esm_path)
 
     # Step 4: Split
     logger.info("-" * 40)
