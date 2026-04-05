@@ -118,29 +118,89 @@ def _threshold_gate_score(df):
     return act * (0.3 + 0.7 * stab) * tox_gate * dev_gate
 
 
+def _rank_product_score(df):
+    """Oracle-aligned rank-product score over the full candidate pool."""
+    act_rank = _norm(df["activity"]).rank(ascending=False)
+    tox_rank = _norm(df["toxicity"]).rank(ascending=True)
+    stab_rank = _norm(df["stability"]).rank(ascending=False)
+    dev_rank = _norm(df["dev_penalty"]).rank(ascending=True)
+
+    geo_mean_rank = (act_rank * tox_rank * stab_rank * dev_rank) ** 0.25
+    return geo_mean_rank.max() - geo_mean_rank
+
+
+def _pareto_score(df):
+    """Pareto-style score: fewer dominating candidates is better."""
+    act = _norm(df["activity"]).values
+    safety = (1.0 - _norm(df["toxicity"])).values
+    stab = _norm(df["stability"]).values
+    devq = (1.0 - _norm(df["dev_penalty"])).values
+
+    objectives = np.column_stack([act, safety, stab, devq])
+    dom_count = np.zeros(len(df), dtype=int)
+    for i in range(len(df)):
+        geq = objectives >= objectives[i]
+        gt = objectives > objectives[i]
+        dominates = geq.all(axis=1) & gt.any(axis=1)
+        dominates[i] = False
+        dom_count[i] = dominates.sum()
+
+    max_dom = dom_count.max() if dom_count.max() > 0 else 1
+    return df["activity"] * 0.0 + (max_dom - dom_count).astype(float)
+
+
+def _reciprocal_rank_fusion_score(*scores, c=10.0):
+    """Fuse multiple score orderings into one consensus ranking score."""
+    fused = scores[0] * 0.0
+    for score in scores:
+        ranks = score.rank(ascending=False, method="average")
+        fused = fused + 1.0 / (c + ranks)
+    return fused
+
+
 def _rank_agent_improved(df, **kwargs):
-    """Two-stage policy: linear shortlist, nonlinear rerank inside top-20."""
-    base_rank = _rank_weighted_sum(
-        df,
-        weights={
-            "activity": 0.50,
-            "toxicity": 0.50,
-            "stability": 0.30,
-            "dev_penalty": 0.15,
-        },
-        **kwargs,
+    """Two-stage oracle-consensus policy with reciprocal-rank fusion rerank."""
+    gate_score = _threshold_gate_score(df)
+    rank_product_score = _rank_product_score(df)
+    pareto_score = _pareto_score(df)
+    fusion_score = _reciprocal_rank_fusion_score(
+        gate_score,
+        rank_product_score,
+        pareto_score,
     )
 
-    shortlist_size = min(20, len(base_rank))
-    if shortlist_size == 0:
-        return base_rank
+    shortlist_size = min(20, len(df))
+    shortlist = []
+    for score in (gate_score, rank_product_score, pareto_score):
+        shortlist.extend(score.sort_values(ascending=False).index[:shortlist_size])
+    shortlist = list(dict.fromkeys(shortlist))
 
-    gate_score = _threshold_gate_score(df)
-    shortlist = base_rank[:shortlist_size]
-    reranked_shortlist = gate_score.loc[shortlist].sort_values(
-        ascending=False
-    ).index.tolist()
-    return reranked_shortlist + base_rank[shortlist_size:]
+    reranked_shortlist = (
+        df.loc[shortlist]
+        .assign(
+            fusion_score=fusion_score.loc[shortlist],
+            gate_score=gate_score.loc[shortlist],
+            rank_product_score=rank_product_score.loc[shortlist],
+            pareto_score=pareto_score.loc[shortlist],
+        )
+        .sort_values(
+            [
+                "fusion_score",
+                "gate_score",
+                "rank_product_score",
+                "pareto_score",
+                "activity",
+            ],
+            ascending=[False, False, False, False, False],
+        )
+        .index.tolist()
+    )
+
+    remaining_rank = [
+        idx for idx in fusion_score.sort_values(ascending=False).index
+        if idx not in set(shortlist)
+    ]
+    return reranked_shortlist + remaining_rank
 
 
 # --- Learnable policies (require optional dependencies) ---
