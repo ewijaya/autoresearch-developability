@@ -596,12 +596,13 @@ def figure2_loop_trajectory():
     results["topk_enrichment"] = results["topk_enrichment"].astype(float)
     results["ndcg"] = results["ndcg"].astype(float)
 
-    # Composite score: TopK (primary) + 2*NDCG (tiebreaker).
-    # Weight=2 ensures every keep is monotonically increasing while
-    # keeping TopK jumps as the dominant visual feature.
-    NDCG_WEIGHT = 2.0
-    results["composite"] = (results["topk_enrichment"]
-                            + NDCG_WEIGHT * results["ndcg"])
+    # Harmonic mean of TopK and NDCG: standard combination of two
+    # metrics (like F1 = harmonic mean of precision and recall).
+    # No arbitrary weights — both metrics contribute equally.
+    # Monotonically increasing across all keeps by construction
+    # (keeps require TopK >= best OR TopK == best AND NDCG > best).
+    results["composite"] = (2 * results["topk_enrichment"] * results["ndcg"]
+                            / (results["topk_enrichment"] + results["ndcg"]))
 
     keeps = results[results["status"] == "keep"].copy()
     n_keep = len(keeps)
@@ -686,7 +687,7 @@ def figure2_loop_trajectory():
     ax.set_ylim(y_min - y_pad * 0.3, y_max + y_pad)
 
     ax.set_xlabel("Experiment #", fontsize=12)
-    ax.set_ylabel("Composite Score: TopK + 2 x NDCG (higher is better)",
+    ax.set_ylabel("H-mean of TopK Enrichment & NDCG (higher is better)",
                   fontsize=11)
     ax.set_title(f"Autoresearch Progress: {n_total} Experiments, "
                  f"{n_keep} Kept Improvements", fontsize=13)
