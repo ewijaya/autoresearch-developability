@@ -596,81 +596,110 @@ def figure2_loop_trajectory():
     results["topk_enrichment"] = results["topk_enrichment"].astype(float)
     results["ndcg"] = results["ndcg"].astype(float)
 
-    # Combined score: topk is primary, ndcg breaks ties.
-    # This mirrors the keep/discard logic in session_tools.py exactly:
-    #   keep if topk > best_topk, OR (topk == best_topk AND ndcg > best_ndcg)
-    # Weight of 0.1 makes NDCG sub-steps visible between TopK plateaus:
-    # TopK steps are ~0.017 apart; NDCG diffs ~0.01 * 0.1 = 0.001 per sub-step,
-    # giving ~6 visible sub-steps per TopK plateau without overlapping the next.
-    results["combined_score"] = (results["topk_enrichment"]
-                                 + results["ndcg"] * 0.1)
+    # Running bests for both metrics
+    running_best_topk = results["topk_enrichment"].cummax()
 
-    # Running best as step function (like autoresearch-mol style)
-    running_best = results["combined_score"].cummax()
+    # For NDCG running best: only update when topk improves or ties
+    running_best_ndcg = results["ndcg"].copy()
+    best_topk = results["topk_enrichment"].iloc[0]
+    best_ndcg = results["ndcg"].iloc[0]
+    for i in range(len(results)):
+        topk_i = results["topk_enrichment"].iloc[i]
+        ndcg_i = results["ndcg"].iloc[i]
+        if topk_i > best_topk or (topk_i == best_topk and ndcg_i > best_ndcg):
+            best_topk = topk_i
+            best_ndcg = ndcg_i
+        running_best_ndcg.iloc[i] = best_ndcg
 
     keeps = results[results["status"] == "keep"]
     n_keep = len(keeps)
     n_discard = (results["status"] == "discard").sum()
     n_total = len(results)
 
-    fig, ax = plt.subplots(figsize=(10, 5))
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 7), sharex=True,
+                                    gridspec_kw={"height_ratios": [1, 1],
+                                                 "hspace": 0.08})
 
-    # Step plot for running best — the main visual
-    ax.step(results["iteration"], running_best, where="post",
-            color="#2c3e50", linewidth=2.5, label="Running best", zorder=2)
+    # --- Top panel: Top-k Enrichment (primary metric) ---
+    ax1.step(results["iteration"], running_best_topk, where="post",
+             color="#2c3e50", linewidth=2.5, label="Running best", zorder=2)
 
-    # Faded grey dots for discards (behind step line)
     mask_discard = results["status"] == "discard"
     if mask_discard.any():
-        ax.scatter(
+        ax1.scatter(
             results.loc[mask_discard, "iteration"],
-            results.loc[mask_discard, "combined_score"],
-            c="#d5d8dc", s=20, zorder=1, edgecolors="#c0c5c9",
+            results.loc[mask_discard, "topk_enrichment"],
+            c="#d5d8dc", s=18, zorder=1, edgecolors="#c0c5c9",
+            linewidth=0.3, alpha=0.4,
+        )
+
+    mask_keep = results["status"] == "keep"
+    if mask_keep.any():
+        ax1.scatter(
+            results.loc[mask_keep, "iteration"],
+            results.loc[mask_keep, "topk_enrichment"],
+            c="#2ecc71", s=70, zorder=3, edgecolors="#1a9c4a",
+            linewidth=1.0, alpha=0.95, marker="D",
+        )
+
+    best_topk_val = running_best_topk.iloc[-1]
+    first_topk_val = running_best_topk.iloc[0]
+    topk_pad = max((best_topk_val - first_topk_val) * 1.0, 0.01)
+    ax1.set_ylim(first_topk_val - topk_pad, best_topk_val + topk_pad * 0.5)
+    ax1.set_ylabel("Top-k Enrichment", fontsize=11)
+    ax1.set_title(f"Autoresearch Loop: {n_total} Experiments "
+                  f"({n_keep} keep, {n_discard} discard)", fontsize=12)
+
+    # Annotate best on top panel
+    if len(keeps) > 0:
+        last_keep = keeps.iloc[-1]
+        ax1.annotate(
+            f"Best: {last_keep['topk_enrichment']:.3f}",
+            xy=(last_keep["iteration"], last_keep["topk_enrichment"]),
+            xytext=(10, 12), textcoords="offset points",
+            fontsize=9, fontweight="bold", color="#2c3e50",
+            arrowprops=dict(arrowstyle="->", color="#2c3e50", lw=1.2),
+        )
+
+    # --- Bottom panel: NDCG (tiebreaker metric) ---
+    ax2.step(results["iteration"], running_best_ndcg, where="post",
+             color="#e67e22", linewidth=2.5, label="Running best", zorder=2)
+
+    if mask_discard.any():
+        ax2.scatter(
+            results.loc[mask_discard, "iteration"],
+            results.loc[mask_discard, "ndcg"],
+            c="#d5d8dc", s=18, zorder=1, edgecolors="#c0c5c9",
             linewidth=0.3, alpha=0.4, label="Discard",
         )
 
-    # Green diamonds for keeps (on top)
-    mask_keep = results["status"] == "keep"
     if mask_keep.any():
-        ax.scatter(
+        ax2.scatter(
             results.loc[mask_keep, "iteration"],
-            results.loc[mask_keep, "combined_score"],
-            c="#2ecc71", s=80, zorder=3, edgecolors="#1a9c4a",
+            results.loc[mask_keep, "ndcg"],
+            c="#2ecc71", s=70, zorder=3, edgecolors="#1a9c4a",
             linewidth=1.0, alpha=0.95, marker="D", label="Keep",
         )
 
-    # Annotate first and last keep
-    if len(keeps) > 1:
-        first_keep = keeps.iloc[0]
+    best_ndcg_val = running_best_ndcg.iloc[-1]
+    first_ndcg_val = running_best_ndcg.iloc[0]
+    ndcg_pad = max((best_ndcg_val - first_ndcg_val) * 1.5, 0.005)
+    ax2.set_ylim(first_ndcg_val - ndcg_pad, best_ndcg_val + ndcg_pad * 0.5)
+    ax2.set_xlabel("Experiment", fontsize=11)
+    ax2.set_ylabel("NDCG (tiebreaker)", fontsize=11)
+    ax2.legend(loc="lower right", fontsize=9)
+
+    # Annotate best on bottom panel
+    if len(keeps) > 0:
         last_keep = keeps.iloc[-1]
-        ax.annotate(
-            f"TopK={first_keep['topk_enrichment']:.3f}",
-            xy=(first_keep["iteration"], first_keep["combined_score"]),
-            xytext=(-15, -20), textcoords="offset points",
-            fontsize=9, color="#555",
-            arrowprops=dict(arrowstyle="->", color="#999", lw=1),
-        )
-        ax.annotate(
-            f"Best: TopK={last_keep['topk_enrichment']:.3f}, "
-            f"NDCG={last_keep['ndcg']:.3f}",
-            xy=(last_keep["iteration"], last_keep["combined_score"]),
-            xytext=(10, 15), textcoords="offset points",
-            fontsize=10, fontweight="bold", color="#2c3e50",
-            arrowprops=dict(arrowstyle="->", color="#2c3e50", lw=1.5),
+        ax2.annotate(
+            f"Best: {last_keep['ndcg']:.3f}",
+            xy=(last_keep["iteration"], last_keep["ndcg"]),
+            xytext=(10, -18), textcoords="offset points",
+            fontsize=9, fontweight="bold", color="#e67e22",
+            arrowprops=dict(arrowstyle="->", color="#e67e22", lw=1.2),
         )
 
-    # Tight y-axis: zoom to the staircase range
-    best_val = running_best.iloc[-1]
-    first_val = running_best.iloc[0]
-    y_range = best_val - first_val
-    y_pad = max(y_range * 1.0, 0.01)
-    ax.set_ylim(first_val - y_pad, best_val + y_pad * 0.5)
-
-    ax.set_xlabel("Experiment", fontsize=11)
-    ax.set_ylabel("Summary Score (TopK + NDCG tiebreak)", fontsize=11)
-    ax.set_title(f"Autoresearch Loop: {n_total} Experiments "
-                 f"({n_keep} keep, {n_discard} discard)", fontsize=12)
-    ax.legend(loc="lower right", fontsize=10)
     fig.tight_layout()
 
     FIGURES_DIR.mkdir(parents=True, exist_ok=True)
