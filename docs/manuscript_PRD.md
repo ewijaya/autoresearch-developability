@@ -3,8 +3,8 @@
 **Title:** Agent-Guided Ranking Policy Improvement for Peptide Drug
 Candidate Prioritization
 
-**Target venue:** NeurIPS 2026 Workshop on ML for Molecules (4-page + appendix),
-or Bioinformatics Application Note (4-page)
+**Target venue:** NeurIPS 2026 main conference (9-page + unlimited references
+and appendix). Fallback: ICML 2027 or Bioinformatics journal.
 
 **Companion paper:** Wijaya, 2026. "What an Autonomous Agent Discovers About
 Molecular Transformer Design: Does It Transfer?" arXiv:2603.28015
@@ -139,7 +139,7 @@ manuscript/
 
 **Tone:** Factual, no hype. "Proof-of-concept" and "public benchmark" appear early.
 
-### 4.2 `introduction.tex` (~1.5 pages)
+### 4.2 `introduction.tex` (~1.5-2 pages)
 
 **Paragraph plan:**
 
@@ -182,7 +182,7 @@ manuscript/
 - Multi-objective drug discovery surveys
 - PeptideRanker, AMP prediction tools
 
-### 4.3 `related_work.tex` (~0.75 pages)
+### 4.3 `related_work.tex` (~1 page)
 
 **Three subsections:**
 
@@ -204,7 +204,7 @@ manuscript/
    (single metric: val\_bpb) to ranking policy search (multi-objective).
    The one-editable-file + fixed-harness discipline.
 
-### 4.4 `methodology.tex` (~1.5 pages)
+### 4.4 `methodology.tex` (~2 pages)
 
 **Subsections:**
 
@@ -246,7 +246,7 @@ manuscript/
    - NSGA-II with crowding distance: standard external MOO baseline
    - agent-improved: the loop's output
 
-### 4.5 `results.tex` (~1.5 pages)
+### 4.5 `results.tex` (~2.5 pages)
 
 **Subsections:**
 
@@ -292,7 +292,7 @@ manuscript/
    - Honest statement: practical improvement, marginal statistical significance
    - The small k=20 window makes CIs inherently wide
 
-### 4.6 `discussion.tex` (~0.75 pages)
+### 4.6 `discussion.tex` (~1 page)
 
 **Paragraph plan:**
 
@@ -322,7 +322,7 @@ manuscript/
    endpoint models and candidate pools. The ranking policy search is
    agnostic to the underlying data source.
 
-### 4.7 `conclusion.tex` (~0.25 pages)
+### 4.7 `conclusion.tex` (~0.5 pages)
 
 - Autoresearch-style loops are applicable beyond language modeling
 - Multi-objective framing is more realistic than single-endpoint ranking
@@ -429,7 +429,7 @@ evaluation structure (multi-objective vs single-metric).
 
 ## 8. Writing Constraints
 
-- **Page limit:** 4 pages main + unlimited appendix (workshop format)
+- **Page limit:** 9 pages main + unlimited references and appendix (NeurIPS main)
 - **No hype:** do not claim drug discovery breakthroughs from public toy data
 - **Honest limitations:** CIs overlap, stability model weak, synthetic benchmark
 - **Do not bury limitations:** they go in discussion, not footnotes
