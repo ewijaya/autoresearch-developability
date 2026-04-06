@@ -1,7 +1,7 @@
 \section{Results}
 \label{sec:results}
 
-Results are organized around strategy comparison, loop trajectory, multi-objective trade-offs, endpoint ablation, cross-split robustness, and statistical significance.
+We report strategy comparisons, the loop trajectory, multi-objective trade-offs, endpoint ablation, and cross-split robustness.
 
 \subsection{Strategy Comparison}
 \label{sec:strategy_comparison}
@@ -47,7 +47,7 @@ However, for candidate triage where the objective is to identify the top 20 cand
 
 \textbf{Agent improved vs.\ random weight search.}
 The agent outperforms best-of-1{,}000 random weight search (0.650 vs.\ 0.611 top-$k$ enrichment), demonstrating that directed policy search adds value beyond blind exploration of the same policy class.
-The agent discovered structural innovations---consensus voting, reciprocal rank fusion, learned reranking---that random weight sampling cannot access.
+The agent discovered structural innovations (consensus voting, reciprocal rank fusion, learned reranking) that random weight sampling cannot access.
 
 \textbf{Agent improved vs.\ weighted sum.}
 The improvement over equal-weight scalarization (0.650 vs.\ 0.609) is real but the bootstrap CIs overlap: [0.533, 0.767] vs.\ [0.483, 0.733].
@@ -55,9 +55,9 @@ The improvement is not statistically significant at 95\% confidence on this sing
 However, the improvement is consistent across 10 independent splits ($0.650 \pm 0.034$ vs.\ $0.585 \pm 0.050$; Section~\ref{sec:cross_split}).
 
 \textbf{Feasibility trade-off.}
-Toxicity exclusion achieves the highest feasible fraction (0.982) but the lowest enrichment among non-trivial strategies (0.238)---it finds safe peptides but misses the best candidates.
+Toxicity exclusion achieves the highest feasible fraction (0.982) but the lowest enrichment among non-trivial strategies (0.238), finding safe peptides while missing the best candidates.
 Activity only achieves 0.000 feasible fraction.
-The agent-improved policy balances all metrics, which is the purpose of multi-objective ranking.
+The agent-improved policy balances all three metrics.
 
 \subsection{Loop Trajectory}
 \label{sec:trajectory}
@@ -167,7 +167,7 @@ To assess robustness beyond a single validation split, we evaluate all strategie
 The agent-improved policy achieves the highest mean top-$k$ enrichment ($0.650 \pm 0.034$) across all 10 splits, with the lowest standard deviation among the top three strategies.
 Across 10 independent splits, agent improved outperforms weighted sum on all 10 (sign test $p = 2^{-10} \approx 0.001$).
 
-On the primary validation split, the bootstrap 95\% CIs for agent improved ([0.533, 0.767]) and weighted sum ([0.483, 0.733]) overlap---the improvement is not statistically significant at 95\% confidence on a single split.
+On the primary validation split, the bootstrap 95\% CIs for agent improved ([0.533, 0.767]) and weighted sum ([0.483, 0.733]) overlap; the improvement is not statistically significant at 95\% confidence on a single split.
 The CIs are inherently wide because top-$k$ enrichment at $k = 20$ is a discrete metric with limited resolution.
 Against NSGA-II, the single-split CIs are substantially separated ([0.533, 0.767] vs.\ [0.267, 0.617]; point estimate gap of 0.206).
 

@@ -3,6 +3,6 @@
 
 We demonstrate that the autoresearch paradigm extends from neural architecture search to multi-objective peptide ranking policy search.
 On a public benchmark of 3{,}554 antimicrobial peptides, 100 autonomous experiments produce a ranking policy that outperforms NSGA-II (0.650 vs.\ 0.444 top-$k$ enrichment) and best-of-1{,}000 random weight search (0.650 vs.\ 0.611), with the improvement over equal-weight scalarization consistent across 10 independent data splits ($0.650 \pm 0.034$ vs.\ $0.585 \pm 0.050$).
-The agent discovered structural innovations---oracle consensus voting, reciprocal rank fusion, learned reranking---that go beyond the policy class accessible to random search.
+The agent discovered structural innovations (oracle consensus voting, reciprocal rank fusion, learned reranking) that go beyond the policy class accessible to random search.
 This work is a proof-of-concept on public data with acknowledged limitations.
-The framework is designed for portability to proprietary data; we release the full pipeline as open-source software.
+We release the full pipeline as open-source software, designed for portability to proprietary data.

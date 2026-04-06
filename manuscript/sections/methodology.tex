@@ -1,7 +1,7 @@
 \section{Methodology}
 \label{sec:methodology}
 
-We formalize multi-objective peptide candidate ranking, describe the public benchmark, define the evaluation harness, and detail the autoresearch loop and baselines.
+This section formalizes the ranking problem, describes the public benchmark and evaluation harness, and details the autoresearch loop and baselines.
 
 \subsection{Problem Formulation}
 \label{sec:problem}
@@ -48,7 +48,7 @@ An audit identified 8.9\% sequence overlap between the ToxinPred3 training set a
 
 \textbf{Stability.}
 A random forest regressor is trained on peptide half-life data from HLP \citep{sharma2014hlp}, using the same physicochemical feature set.
-Held-out $R^2$ is 0.547---substantially weaker than the toxicity model, and this limitation propagates to any ranking policy that relies on stability scores.
+Held-out $R^2$ is 0.547, substantially weaker than the toxicity model; this limitation propagates to any ranking policy that relies on stability scores.
 
 \textbf{Developability.}
 A deterministic rule-based proxy computes a penalty score from seven sequence-level rules: length outside 8--40 residues ($+1$), consecutive hydrophobic stretches ($+0.5$ per excess), consecutive prolines ($+0.5$), high net charge ($+1$), high mean hydrophobicity ($+1$), and excess cysteines ($+1$).
@@ -87,7 +87,7 @@ All metrics are computed as the mean across all three oracles:
   \item \textbf{Feasible fraction} (constraint): fraction of top-$k$ selections satisfying $\text{toxicity} < 0.5$ and $\text{dev\_penalty} \leq 3$.
 \end{itemize}
 
-Using three oracles with different mathematical structures---Pareto counting, geometric aggregation, and threshold gating---prevents the agent from reverse-engineering any single formula.
+Using three oracles with different mathematical structures (Pareto counting, geometric aggregation, and threshold gating) prevents the agent from reverse-engineering any single formula.
 
 \subsection{Autoresearch Loop}
 \label{sec:loop}
