@@ -1,0 +1,58 @@
+\section{Discussion \& Limitations}
+\label{sec:discussion}
+
+\textbf{What the loop discovered.}
+The agent's 12 kept improvements follow a clear structural trajectory.
+Early experiments adjust scalarization weights---a form of hyperparameter tuning within the initial policy class.
+Mid-loop experiments introduce two-stage reranking and reciprocal rank fusion \citep{cormack2009rrf}, combining multiple scoring functions into a consensus.
+Late experiments add learned components (MLP, LambdaMART) trained on oracle-aligned labels.
+The agent independently discovered oracle consensus voting---prioritizing candidates that appear in at least two of three independent top-$k$ shortlists---a form of ensemble agreement selection that the authors did not pre-specify.
+
+\textbf{Agent search vs.\ random search.}
+The agent outperforms best-of-1{,}000 random weight search (0.650 vs.\ 0.611 top-$k$ enrichment), confirming that directed policy search adds value beyond blind exploration.
+Critically, the agent escapes the linear scalarization policy class entirely: consensus voting and learned reranking are structural innovations that no amount of random Dirichlet weight sampling can discover.
+This parallels findings from our companion paper \citep{wijaya2026autonomousagentdiscoversmolecular}, where the full agent outperformed random NAS on SMILES architecture search.
+
+\textbf{Agent search vs.\ NSGA-II.}
+NSGA-II \citep{deb2002nsga2} achieves the highest hypervolume (0.584) but the lowest top-$k$ enrichment among multi-objective strategies (0.444), reflecting a fundamental mismatch between its objective (Pareto spread) and the triage task (top-$k$ concentration).
+NSGA-II is designed to maintain a diverse set of non-dominated solutions, not to identify a tight cluster of the best candidates.
+For candidate triage where the budget permits validating ${\sim}$20 peptides, scalarization-based approaches that concentrate selections are better suited.
+
+\textbf{Limitations.}
+We identify seven limitations that scope the claims of this work:
+
+\begin{enumerate}[nosep]
+\item \emph{Synthetic benchmark.}
+Only activity is ground truth (measured MIC from DBAASP).
+Toxicity and stability are predicted by models with imperfect accuracy (AUC 0.920 and $R^2$ 0.547 respectively), and developability is a deterministic rule-based proxy.
+The ranking policy optimizes over estimated scores, not biological reality.
+
+\item \emph{Weak stability model.}
+The HLP-trained stability model achieves $R^2 = 0.547$, meaning it explains roughly half the variance in peptide half-life.
+Ranking policies that weight stability heavily inherit this uncertainty.
+
+\item \emph{Overlapping bootstrap CIs.}
+The single-split bootstrap CIs for agent improved ([0.533, 0.767]) and weighted sum ([0.483, 0.733]) overlap at 95\% confidence.
+The cross-split analysis provides stronger evidence ($p \approx 0.001$ by sign test), but the single-split comparison is underpowered.
+
+\item \emph{Random splitting.}
+The 70/15/15 train/val/test split uses random assignment.
+Sequence-similarity-aware splitting (e.g., MMseqs2 clustering) would provide a more stringent test of generalization but was not applied in the current benchmark.
+
+\item \emph{Training data overlap.}
+An 8.9\% overlap between ToxinPred3 training sequences and the DBAASP candidate pool was identified but not fully controlled.
+This may inflate the toxicity model's apparent performance on overlapping candidates.
+
+\item \emph{Oracle design choices.}
+The three oracle definitions (Pareto rank, rank product, threshold gate) are engineering choices, not biological ground truth.
+Different oracle designs could favor different policies.
+
+\item \emph{Narrow scope.}
+All experiments use a single candidate pool of antimicrobial peptides against a single organism (\emph{E.~coli} ATCC 25922).
+Generalization to non-AMP peptides, other organisms, or different endpoint combinations is untested.
+\end{enumerate}
+
+\textbf{Portability.}
+Despite these limitations, the framework is designed for straightforward adaptation to proprietary data.
+The ranking policy search is agnostic to the underlying data source: replacing endpoint models and candidate pools requires modifying only the data pipeline (\texttt{prepare.py}), while the loop infrastructure, evaluation harness, and agent interface remain unchanged.
+A biotech team with internal peptide data and proprietary endpoint models could deploy the same loop with minimal integration effort.

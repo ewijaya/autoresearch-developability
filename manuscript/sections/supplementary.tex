@@ -1,0 +1,136 @@
+\section{Supplementary Material}
+\label{sec:supplementary}
+
+\subsection{Weight Sensitivity Analysis}
+\label{sec:weight_sensitivity}
+
+Figure~\ref{fig:weight_sensitivity} shows the result of systematic weight perturbation experiments from the manual loop phase (Phase 3, prior to the Codex loop).
+Each bar represents the change in top-$k$ enrichment when a single weight is perturbed from the optimized configuration.
+The analysis confirms that the manual-phase solution is a local optimum: all single-weight perturbations degrade performance.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.85\linewidth]{figures/fig5_weight_sensitivity.pdf}
+\caption{Weight sensitivity analysis from the manual loop phase (Phase 3). Each bar shows the change in top-$k$ enrichment when a single scalarization weight is perturbed from the optimized values. All perturbations degrade performance, confirming a local optimum.}
+\label{fig:weight_sensitivity}
+\end{figure}
+
+\subsection{Full Trajectory of Kept Experiments}
+\label{sec:supp_tables}
+
+Table~\ref{tab:keeps} lists all 12 kept experiments from the 100-experiment Codex loop, with metrics and abbreviated descriptions.
+
+\begin{table}[h]
+\centering
+\caption{All 12 kept experiments from the autoresearch loop. Experiment numbers indicate position in the 100-experiment sequence. TopK = mean top-$k$ enrichment across three oracles; NDCG = mean NDCG; H-mean = harmonic mean of TopK and NDCG.}
+\label{tab:keeps}
+\small
+\begin{tabular}{@{}rlllp{7.5cm}@{}}
+\toprule
+\textbf{Exp.} & \textbf{TopK} & \textbf{NDCG} & \textbf{H-mean} & \textbf{Description} \\
+\midrule
+1 & 0.683 & 0.972 & 0.802 & Baseline agent\_improved \\
+2 & 0.700 & 0.974 & 0.815 & Weight tuning: activity$=$0.50, toxicity$=$0.50, stability$=$0.30 \\
+11 & 0.700 & 0.978 & 0.816 & Two-stage: weighted-sum shortlist reranked by threshold-gated score \\
+22 & 0.700 & 0.978 & 0.816 & Ensemble rerank: threshold-gated + rank-product \\
+26 & 0.700 & 0.979 & 0.817 & Reciprocal rank fusion of threshold-gated, rank-product, Pareto \\
+32 & 0.717 & 0.974 & 0.826 & Oracle consensus: $\geq$2-of-3 vote shortlist + RRF \\
+38 & 0.717 & 0.976 & 0.827 & Consensus + LambdaMART oracle score + RRF tie-break \\
+41 & 0.717 & 0.979 & 0.828 & Consensus reranked by RRF of LambdaMART + 3 heuristics \\
+61 & 0.717 & 0.980 & 0.828 & Consensus + MLP+LambdaMART ensemble filler \\
+65 & 0.717 & 0.980 & 0.828 & Final top-20 reranked by threshold-gated + learned tie-breaks \\
+93 & 0.717 & 0.981 & 0.828 & Per-oracle MLP augments learned ensemble \\
+94 & 0.717 & 0.981 & 0.828 & Per-oracle MLP bottleneck reranker (min+harmonic aggregation) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Cross-Split Summary Statistics}
+\label{sec:supp_multi_split}
+
+Table~\ref{tab:multi_split} provides the full cross-split statistics for all eight strategies.
+
+\begin{table}[h]
+\centering
+\caption{Cross-split summary statistics ($n = 10$ random splits). Mean $\pm$ std of top-$k$ enrichment and NDCG.}
+\label{tab:multi_split}
+\small
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+\textbf{Strategy} & \textbf{TopK mean} & \textbf{TopK std} & \textbf{NDCG mean} & \textbf{NDCG std} \\
+\midrule
+Random & 0.038 & 0.026 & 0.572 & 0.037 \\
+Activity only & 0.122 & 0.038 & 0.649 & 0.014 \\
+Toxicity exclusion & 0.287 & 0.058 & 0.832 & 0.031 \\
+Rule only & 0.357 & 0.055 & 0.853 & 0.014 \\
+NSGA-II & 0.435 & 0.073 & 0.781 & 0.024 \\
+Weighted sum & 0.585 & 0.050 & 0.952 & 0.012 \\
+Random wt.\ search & 0.603 & 0.046 & 0.924 & 0.027 \\
+\textbf{Agent improved} & \textbf{0.650} & \textbf{0.034} & \textbf{0.969} & 0.014 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Per-Oracle Breakdown}
+\label{sec:per_oracle}
+
+Table~\ref{tab:per_oracle} provides the per-oracle top-$k$ enrichment and NDCG for the four main strategies, showing that the mean metrics reported in the main text are not dominated by any single oracle.
+
+\begin{table}[h]
+\centering
+\caption{Per-oracle top-$k$ enrichment and NDCG on the validation split ($k = 20$). Values from the endpoint ablation baseline (no ablation). PR = Pareto rank, RP = rank product, TG = threshold gate.}
+\label{tab:per_oracle}
+\small
+\begin{tabular}{@{}lcccccc@{}}
+\toprule
+\textbf{Strategy} & \multicolumn{3}{c}{\textbf{Top-$k$ Enrichment}} & \multicolumn{3}{c}{\textbf{NDCG}} \\
+\cmidrule(lr){2-4} \cmidrule(lr){5-7}
+ & PR & RP & TG & PR & RP & TG \\
+\midrule
+Weighted sum & 0.450 & 0.900 & 0.600 & 0.999 & 0.996 & 0.939 \\
+Agent improved & 0.600 & 0.700 & 0.850 & 1.000 & 0.972 & 0.988 \\
+Rule only & 0.250 & 0.500 & 0.400 & 0.996 & 0.945 & 0.627 \\
+NSGA-II & --- & --- & --- & --- & --- & --- \\
+\bottomrule
+\multicolumn{7}{@{}l@{}}{\footnotesize NSGA-II per-oracle values not available from ablation data.}
+\end{tabular}
+\end{table}
+
+The agent-improved policy achieves 0.850 on the threshold-gate oracle (vs.\ 0.600 for weighted sum) and 0.600 on the Pareto rank oracle (vs.\ 0.450 for weighted sum), but scores lower on the rank-product oracle (0.700 vs.\ 0.900).
+This trade-off across oracles reflects the consensus voting mechanism: by requiring agreement across multiple ranking criteria, the policy shifts emphasis toward candidates that score well under diverse definitions of quality.
+
+\subsection{Qualitative Examples}
+\label{sec:qualitative}
+
+Table~\ref{tab:qualitative} shows the five peptides with the largest rank improvements (promoted by agent improved relative to weighted sum) and the five with the largest rank degradations (demoted).
+
+\begin{table}[h]
+\centering
+\caption{Peptides with the largest rank changes between weighted sum and agent improved. Positive rank change = promoted (ranked higher by agent). Activity (Act), toxicity (Tox), stability (Stab), and developability penalty (Dev) shown. Sequences truncated to 20 characters.}
+\label{tab:qualitative}
+\small
+\begin{tabular}{@{}lrrrrrr@{}}
+\toprule
+\textbf{Sequence (truncated)} & \textbf{Act} & \textbf{Tox} & \textbf{Stab} & \textbf{Dev} & \textbf{$\Delta$Rank} \\
+\midrule
+\multicolumn{6}{@{}l}{\emph{Promoted (entered higher ranks):}} \\
+GPHSANHVRGLARVGNANPG\ldots & 0.444 & 0.218 & 0.088 & 3.5 & $+$339 \\
+RWRRPIRRRPIRPPFWRKGK\ldots & 0.617 & 0.523 & 0.136 & 2.5 & $+$259 \\
+RWRRPIRRRPIRPPFWRKGK\ldots & 0.659 & 0.717 & 0.163 & 2.5 & $+$228 \\
+VRKPPYLPRPRPRPLGGGKR\ldots & 0.617 & 0.551 & 0.144 & 2.5 & $+$228 \\
+GWWKRVFKPVEKFGQRVRD\ldots & 0.386 & 0.459 & 0.199 & 2.5 & $+$218 \\
+\midrule
+\multicolumn{6}{@{}l}{\emph{Demoted (ranked lower):}} \\
+KKLLKWLKKLL & 0.406 & 0.827 & 0.340 & 0.0 & $-$179 \\
+GLNALKKVFQGIHEAIKLINN\ldots & 0.367 & 0.750 & 0.310 & 0.0 & $-$180 \\
+GLNALKKVFQGIHEAIKLINK\ldots & 0.367 & 0.762 & 0.321 & 0.0 & $-$190 \\
+GLNALKKVFKGIHEAIKLI\ldots & 0.367 & 0.787 & 0.318 & 0.0 & $-$200 \\
+GLNALKKVFQGIHKAIKLINN\ldots & 0.367 & 0.842 & 0.327 & 0.0 & $-$204 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The promoted peptides share a pattern: moderate-to-high activity with low-to-moderate toxicity, which the oracle consensus mechanism favors.
+The demoted peptides share a contrasting pattern: moderate activity with \emph{high} toxicity ($>0.75$) but zero developability penalty and moderate stability.
+Under equal-weight scalarization, these peptides' good stability and developability offset their toxicity; the agent-improved policy's consensus mechanism, which incorporates threshold-gated scoring, penalizes them more sharply.
+This behavior is consistent with the triage objective: a candidate with high toxicity is unlikely to survive downstream validation regardless of its other properties.

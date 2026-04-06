@@ -1,0 +1,127 @@
+\section{Methodology}
+\label{sec:methodology}
+
+We formalize multi-objective peptide candidate ranking, describe the public benchmark, define the evaluation harness, and detail the autoresearch loop and baselines.
+
+\subsection{Problem Formulation}
+\label{sec:problem}
+
+Given a pool of $N$ peptide candidates, each characterized by estimated scores for $K$ endpoints (activity, toxicity, stability, manufacturability), the goal is to learn a ranking policy $\pi$ that maps score vectors to a candidate ordering maximizing discovery utility under all constraints simultaneously.
+Formally, let $\mathbf{x}_i = (a_i, t_i, s_i, d_i) \in \mathbb{R}^4$ denote the endpoint score vector for candidate $i$.
+A ranking policy $\pi: \mathbb{R}^{N \times 4} \to \mathcal{S}_N$ produces a permutation of candidates.
+The policy is evaluated by how well its top-$k$ selections overlap with ground-truth high-quality candidates defined by independent oracle functions (Section~\ref{sec:evaluation_harness}).
+
+This formulation differs from generative molecular optimization, which proposes novel molecules.
+Here, the candidate pool is fixed and the challenge is \emph{prioritization}: given imperfect multi-endpoint estimates, which candidates should advance to expensive downstream validation?
+
+\subsection{Public Benchmark}
+\label{sec:benchmark}
+
+We assemble a benchmark from four public data sources spanning complementary developability endpoints (Table~\ref{tab:datasets}).
+
+\begin{table}[t]
+\centering
+\caption{Benchmark data sources. The candidate pool comprises 3{,}554 antimicrobial peptides from DBAASP with measured activity against \emph{E.~coli} ATCC 25922. Toxicity and stability are predicted by random forest models trained on independent public datasets. Developability is a deterministic rule-based penalty. Sequence lengths range from 5 to 50 residues.}
+\label{tab:datasets}
+\small
+\begin{tabular}{@{}llrrll@{}}
+\toprule
+\textbf{Endpoint} & \textbf{Source} & \textbf{$N$} & \textbf{Type} & \textbf{Held-out} & \textbf{Notes} \\
+\midrule
+Activity & DBAASP v4 & 3{,}554 & Measured MIC & --- & $-\log_{10}$ potency \\
+Toxicity & ToxinPred3 & 8{,}323 train & RF classifier & AUC 0.920 & 8.9\% overlap flagged \\
+Stability & HLP & 1{,}353 train & RF regressor & $R^2$ 0.547 & Weak; acknowledged \\
+Developability & Rule-based & --- & 7 penalties & Deterministic & Length, charge, hydrophobicity \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Activity.}
+Antimicrobial activity is derived from minimum inhibitory concentration (MIC) values in the Database of Antimicrobial Activity and Structure of Peptides (DBAASP v4) \citep{pirtskhalava2024dbaasp}, filtered to \emph{E.~coli} ATCC 25922 as target strain.
+Raw MIC values are converted to $-\log_{10}$ potency and min-max normalized to $[0, 1]$.
+This is the only ground-truth endpoint; the remaining three are estimated.
+
+\textbf{Toxicity.}
+A random forest classifier is trained on binary toxicity labels from ToxinPred3 \citep{gupta2024toxinpred3}, using physicochemical features (amino acid composition, hydrophobicity, charge, molecular weight) augmented with ESM-2 embeddings \citep{lin2023esm2} from the 8M-parameter model.
+Held-out AUC is 0.920.
+An audit identified 8.9\% sequence overlap between the ToxinPred3 training set and DBAASP candidate pool; this overlap is flagged but not fully controlled in the current benchmark.
+
+\textbf{Stability.}
+A random forest regressor is trained on peptide half-life data from HLP \citep{sharma2014hlp}, using the same physicochemical feature set.
+Held-out $R^2$ is 0.547---substantially weaker than the toxicity model, and this limitation propagates to any ranking policy that relies on stability scores.
+
+\textbf{Developability.}
+A deterministic rule-based proxy computes a penalty score from seven sequence-level rules: length outside 8--40 residues ($+1$), consecutive hydrophobic stretches ($+0.5$ per excess), consecutive prolines ($+0.5$), high net charge ($+1$), high mean hydrophobicity ($+1$), and excess cysteines ($+1$).
+The total penalty ranges from 0 (ideal) to ${\sim}3.5$ in practice.
+
+\textbf{Candidate pool statistics.}
+The pool of 3{,}554 peptides has mean activity $0.418 \pm 0.124$, mean toxicity $0.662 \pm 0.163$, mean stability $0.205 \pm 0.108$, and mean developability penalty $0.780 \pm 0.661$.
+The data are split approximately 70/15/15\% into training, validation, and test sets (2{,}452/539/563 candidates).
+All results in this paper are reported on the validation split unless otherwise noted.
+
+\subsection{Fixed Evaluation Harness}
+\label{sec:evaluation_harness}
+
+A fixed evaluation harness prevents the agent from gaming any single metric definition.
+The harness defines three independent oracle functions, each representing a different notion of ``ground-truth best'' candidates:
+
+\textbf{Pareto rank oracle.}
+Each candidate is assigned its Pareto domination count across all four endpoints (treating activity and stability as objectives to maximize, toxicity and developability penalty as objectives to minimize).
+Candidates with fewer dominating solutions rank higher.
+This oracle is resistant to linear approximation.
+
+\textbf{Rank product oracle.}
+The geometric mean of per-endpoint ranks is computed: $\text{score}_i = (r^\text{act}_i \cdot r^\text{tox}_i \cdot r^\text{stab}_i \cdot r^\text{dev}_i)^{1/4}$.
+This nonlinear aggregation penalizes candidates that are weak on any single endpoint.
+
+\textbf{Threshold-gated oracle.}
+Activity is multiplied by a stability bonus and gated by sigmoid functions on toxicity and developability: $\text{score}_i = a_i \cdot (0.3 + 0.7 \cdot s_i) \cdot \sigma(-10(t_i - 0.5)) \cdot \sigma(-10(d_i - 0.5))$.
+This oracle sharply penalizes candidates exceeding toxicity or developability thresholds.
+
+\textbf{Metrics.}
+All metrics are computed as the mean across all three oracles:
+\begin{itemize}[nosep]
+  \item \textbf{Top-$k$ enrichment} (primary): fraction of the oracle's true top-$k$ appearing in the policy's top-$k$ ($k = 20$).
+  \item \textbf{NDCG} \citep{jarvelin2002ndcg} (secondary): normalized discounted cumulative gain at $k = 20$.
+  \item \textbf{Hypervolume} \citep{zitzler2003hypervolume} (diagnostic): dominated area in the (activity, $1 - \text{toxicity}$) plane for the policy's top-$k$ selections.
+  \item \textbf{Feasible fraction} (constraint): fraction of top-$k$ selections satisfying $\text{toxicity} < 0.5$ and $\text{dev\_penalty} \leq 3$.
+\end{itemize}
+
+Using three oracles with different mathematical structures---Pareto counting, geometric aggregation, and threshold gating---prevents the agent from reverse-engineering any single formula.
+
+\subsection{Autoresearch Loop}
+\label{sec:loop}
+
+We adapt the autoresearch framework \citep{karpathy2026autoresearch} from neural architecture search to ranking policy search.
+Our companion paper \citep{wijaya2026autonomousagentdiscoversmolecular} previously applied this paradigm to molecular transformer architecture search across SMILES, protein, and NLP domains (3{,}106 experiments).
+Here, the editable surface changes from a training script to a ranking policy, and the evaluation changes from a single metric (val\_bpb) to a multi-objective ensemble.
+
+\textbf{Architecture.}
+An outer loop (\texttt{run\_agent\_loop.py}) spawns one-shot Codex sessions (GPT-5.4, xhigh reasoning effort).
+Each session receives: (1)~the system prompt (\texttt{program.md}) specifying loop rules, (2)~the current ranking policy (\texttt{rank.py}), and (3)~the results log of all prior experiments.
+The session edits \texttt{rank.py} to implement one coherent policy modification, then invokes the evaluation harness.
+If the primary metric (mean top-$k$ enrichment) improves, the change is kept; otherwise it is reverted.
+
+\textbf{Workspace isolation.}
+Each session operates on an isolated copy of the source code.
+The evaluation harness, data pipeline, endpoint models, and oracle definitions are frozen throughout the loop.
+The agent can only modify \texttt{rank.py} (and optionally \texttt{rank\_learnable.py} for learned models).
+
+\textbf{Budget.}
+The loop executes 100 sequential experiments.
+Of these, 12 are kept (improvements) and 88 are discarded (regressions or ties).
+
+\subsection{Baselines}
+\label{sec:baselines}
+
+We compare the agent-improved policy against seven baselines spanning simple heuristics, standard multi-objective optimization, and random search:
+
+\begin{itemize}[nosep]
+  \item \textbf{Activity only}: rank by predicted activity alone.
+  \item \textbf{Toxicity exclusion}: hard-filter candidates with toxicity $\geq 0.5$, rank remainder by activity.
+  \item \textbf{Weighted sum}: min-max normalize all four endpoints, combine with equal weights ($w = 0.25$ each).
+  \item \textbf{Rule only}: hard-filter on toxicity $\leq 0.7$ and developability penalty $\leq 3$, rank by stability then activity.
+  \item \textbf{Random}: uniformly random ordering (seed = 42).
+  \item \textbf{Random weight search}: best-of-1{,}000 Dirichlet-sampled weight vectors evaluated with the weighted-sum scalarization \citep{bergstra2012random}. This controls for blind exploration of the same policy class the agent starts from.
+  \item \textbf{NSGA-II} \citep{deb2002nsga2}: non-dominated sorting with crowding distance tie-break across all four objectives. This is the standard multi-objective optimization baseline.
+\end{itemize}

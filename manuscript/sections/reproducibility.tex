@@ -1,0 +1,25 @@
+\section{Reproducibility Statement}
+\label{sec:reproducibility}
+
+\textbf{Code.}
+The complete pipeline is available at \url{https://github.com/ewijaya/autoresearch-developability}, including the evaluation harness, all ranking strategies, the agent loop infrastructure, and analysis scripts.
+
+\textbf{Data.}
+All datasets are downloaded from public sources: DBAASP v4 (\url{https://dbaasp.org}), ToxinPred3 training data, and HLP.
+The data pipeline (\texttt{src/prepare.py}) handles download, preprocessing, model training, and splitting.
+
+\textbf{Random seeds.}
+All data splits, model training, and random baselines use seed 42.
+The 10-split robustness study uses seeds 0--9.
+
+\textbf{Agent.}
+The Codex agent uses GPT-5.4 with xhigh reasoning effort through the OpenAI API.
+Due to non-determinism in the LLM backend, exact reproduction of individual loop runs is not possible, but the evaluation harness and metrics are fully deterministic given a ranking policy.
+
+\textbf{Hardware.}
+ESM-2 embeddings were computed on a g5.xlarge instance (NVIDIA A10G, 24\,GB VRAM).
+The autoresearch loop and all evaluations run on a c7i.large instance (CPU only).
+
+\textbf{Reproduction.}
+Running \texttt{bash run\_all.sh} reproduces the data pipeline and baseline evaluations.
+Running \texttt{python -m src.analysis} regenerates all figures and ablation tables from cached results.

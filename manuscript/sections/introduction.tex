@@ -1,0 +1,38 @@
+\section{Introduction}
+\label{sec:introduction}
+
+Peptide drug candidates must survive a portfolio of constraints before entering preclinical development: high activity against the biological target, low toxicity, adequate metabolic stability, and acceptable manufacturability \citep{yan2022review}.
+A peptide with potent antimicrobial activity but high predicted toxicity is not a lead---it is an expensive distraction.
+Most computational approaches to peptide discovery optimize a single endpoint at a time \citep{veltri2018ampscanner,lee2023peptidevae}, leaving the multi-objective trade-off to manual post-hoc filtering.
+When endpoints conflict---as they often do, since highly active peptides tend toward membrane-disrupting mechanisms that correlate with toxicity---single-endpoint optimization produces candidates that fail downstream.
+
+Multi-objective optimization (MOO) methods such as NSGA-II \citep{deb2002nsga2} address this by seeking Pareto-optimal solutions across competing objectives.
+However, classical MOO methods optimize for Pareto spread (diversity across the frontier) rather than top-$k$ concentration (the best 20 candidates for wet-lab validation).
+In early-stage triage, where the objective is to prioritize a small number of candidates for expensive downstream assays, the desired output is a ranked shortlist, not a diverse Pareto front.
+
+The autoresearch framework \citep{karpathy2026autoresearch} demonstrated that an LLM agent can iteratively improve a system through a tight loop: read the current state, make one code modification, evaluate against a fixed harness, keep the change if it improves, otherwise revert.
+Our companion paper \citep{wijaya2026autonomousagentdiscoversmolecular} applied this paradigm to molecular transformer architecture search across SMILES, protein, and NLP domains, running 3{,}106 experiments and finding that the value of architecture search is domain-dependent.
+Here we adapt the same paradigm to a fundamentally different problem: instead of optimizing a single metric (val\_bpb) by modifying a neural architecture, we optimize a multi-objective ranking policy for peptide candidate triage.
+
+Concretely, we construct a public benchmark from DBAASP \citep{pirtskhalava2024dbaasp} (antimicrobial activity), ToxinPred3 \citep{gupta2024toxinpred3} (toxicity), HLP \citep{sharma2014hlp} (stability), and rule-based developability proxies.
+The evaluation harness uses a three-oracle ensemble---Pareto rank, rank product, and threshold-gated scoring---to prevent the agent from gaming any single metric definition.
+A Codex agent (GPT-5.4) runs 100 experiments, iteratively editing the ranking policy.
+
+The agent progresses from simple weight tuning to two-stage reranking to oracle consensus voting to learned MLP and LambdaMART \citep{ke2017lightgbm} ensembles.
+The final policy achieves 0.650 top-$k$ enrichment (bootstrap 95\% CI [0.533, 0.767]) and 0.982 NDCG, outperforming NSGA-II (0.444; non-overlapping CIs) and best-of-1{,}000 random weight search (0.611).
+
+This paper makes four contributions:
+\begin{enumerate}[nosep]
+\item \textbf{First application of autoresearch-style loops to multi-objective peptide ranking.}
+We extend the autoresearch paradigm from single-metric architecture search to multi-objective ranking policy search, demonstrating that the loop can discover structural innovations (consensus voting, learned reranking) beyond hyperparameter tuning.
+
+\item \textbf{A public multi-objective peptide benchmark with three-oracle evaluation.}
+We assemble a benchmark of 3{,}554 antimicrobial peptides scored across four endpoints, evaluated against three mathematically distinct oracle definitions that resist reverse-engineering.
+
+\item \textbf{Empirical comparison of autonomous policy search vs.\ standard MOO.}
+We show that the agent-improved policy outperforms NSGA-II and random weight search, with the improvement consistent across 10 independent data splits ($0.650 \pm 0.034$ vs.\ $0.585 \pm 0.050$ for equal-weight scalarization).
+
+\item \textbf{An open-source framework portable to proprietary peptide data.}
+The ranking policy, evaluation harness, and loop infrastructure are released as a reusable toolkit.
+The pipeline is designed for drop-in replacement of endpoint models and candidate pools.
+\end{enumerate}
