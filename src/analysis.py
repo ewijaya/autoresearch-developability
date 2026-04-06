@@ -595,61 +595,87 @@ def figure2_loop_trajectory():
     results["iteration"] = range(1, len(results) + 1)
     results["topk_enrichment"] = results["topk_enrichment"].astype(float)
 
-    # Determine color by status
-    color_map = {
-        "keep": "#2ecc71",
-        "discard": "#e74c3c",
-        "baseline": "#3498db",
-        "crash": "#95a5a6",
-        "ambiguous": "#f39c12",
-    }
-    results["color"] = results["status"].map(color_map).fillna("#95a5a6")
-
     # Running best
     running_best = results["topk_enrichment"].cummax()
 
     fig, ax = plt.subplots(figsize=(12, 5))
 
-    # Plot running best line first (behind points)
-    ax.plot(results["iteration"], running_best, color="#2c3e50",
-            linewidth=2.5, alpha=0.8, label="Running best", zorder=1)
-
-    # Scatter by status
-    for status in ["keep", "discard", "baseline", "crash", "ambiguous"]:
-        mask = results["status"] == status
-        if not mask.any():
-            continue
+    # Plot discards FIRST (behind everything) in faded grey
+    mask_discard = results["status"] == "discard"
+    if mask_discard.any():
         ax.scatter(
-            results.loc[mask, "iteration"],
-            results.loc[mask, "topk_enrichment"],
-            c=color_map.get(status, "#95a5a6"),
-            label=status.capitalize(),
-            s=60, zorder=2, edgecolors="white", linewidth=0.5,
-            alpha=0.8,
+            results.loc[mask_discard, "iteration"],
+            results.loc[mask_discard, "topk_enrichment"],
+            c="#d5d8dc", label="Discard",
+            s=35, zorder=1, edgecolors="#bdc3c7", linewidth=0.3,
+            alpha=0.5,
         )
 
-    # Annotate key milestones
+    # Running best line (on top of discards, behind keeps)
+    ax.plot(results["iteration"], running_best, color="#2c3e50",
+            linewidth=2.5, alpha=0.9, label="Running best", zorder=2)
+
+    # Keep points (prominent, on top)
+    mask_keep = results["status"] == "keep"
+    if mask_keep.any():
+        ax.scatter(
+            results.loc[mask_keep, "iteration"],
+            results.loc[mask_keep, "topk_enrichment"],
+            c="#2ecc71", label="Keep",
+            s=90, zorder=3, edgecolors="#27ae60", linewidth=1.0,
+            alpha=0.95, marker="D",
+        )
+
+    # Baseline points
+    mask_baseline = results["status"] == "baseline"
+    if mask_baseline.any():
+        ax.scatter(
+            results.loc[mask_baseline, "iteration"],
+            results.loc[mask_baseline, "topk_enrichment"],
+            c="#3498db", label="Baseline",
+            s=70, zorder=3, edgecolors="#2980b9", linewidth=0.8,
+            alpha=0.9,
+        )
+
+    # Crash points
+    mask_crash = results["status"] == "crash"
+    if mask_crash.any():
+        ax.scatter(
+            results.loc[mask_crash, "iteration"],
+            results.loc[mask_crash, "topk_enrichment"],
+            c="#e74c3c", label="Crash",
+            s=50, zorder=3, edgecolors="white", linewidth=0.5,
+            marker="x",
+        )
+
+    # Annotate best result
     keeps = results[results["status"] == "keep"]
     if len(keeps) > 0:
-        first_keep = keeps.iloc[0]
         last_keep = keeps.iloc[-1]
         ax.annotate(
             f"Best: {last_keep['topk_enrichment']:.3f}",
             xy=(last_keep["iteration"], last_keep["topk_enrichment"]),
-            xytext=(10, 15), textcoords="offset points",
-            fontsize=9, fontweight="bold",
-            arrowprops=dict(arrowstyle="->", color="#2c3e50", lw=1.2),
+            xytext=(10, 18), textcoords="offset points",
+            fontsize=10, fontweight="bold", color="#2c3e50",
+            arrowprops=dict(arrowstyle="->", color="#2c3e50", lw=1.5),
         )
 
     n_keep = len(keeps)
-    n_discard = (results["status"] == "discard").sum()
+    n_discard = mask_discard.sum()
     n_total = len(results)
 
-    ax.set_xlabel("Experiment")
-    ax.set_ylabel("Top-k Enrichment (mean across oracles)")
+    # Zoom into the action range — use a broken y-axis effect by
+    # setting ylim to show the staircase clearly. Most discards are
+    # between 0.45-0.72, keeps are 0.68-0.72.
+    y_min = max(0.0, results["topk_enrichment"].min() - 0.05)
+    y_max = results["topk_enrichment"].max() + 0.03
+    ax.set_ylim(y_min, y_max)
+
+    ax.set_xlabel("Experiment", fontsize=11)
+    ax.set_ylabel("Top-k Enrichment (mean across oracles)", fontsize=11)
     ax.set_title(f"Autoresearch Loop: {n_total} Experiments "
-                 f"({n_keep} keep, {n_discard} discard)")
-    ax.legend(loc="lower right")
+                 f"({n_keep} keep, {n_discard} discard)", fontsize=12)
+    ax.legend(loc="lower right", fontsize=10)
     fig.tight_layout()
 
     FIGURES_DIR.mkdir(parents=True, exist_ok=True)
