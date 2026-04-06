@@ -27,14 +27,14 @@ The system has three parts:
 
 The AI-improved policy captures **65% of the best candidates** in its top-20 shortlist, compared to:
 
-- **44%** for NSGA-II, the standard multi-objective optimization method
+- **44%** for the standard multi-objective optimization method (NSGA-II)
 - **61%** for the best result from 1,000 random weight combinations
 - **61%** for equal-weight scoring (the naive baseline)
 - **4%** for random selection
 
 The improvement holds across 10 independent data splits (p < 0.001 by sign test), with the AI-improved policy showing the most consistent performance (lowest variance).
 
-NSGA-II achieves the best spread across the Pareto front, which is what it is designed for. But when the goal is to pick the top 20 candidates for expensive lab validation, concentrated selection outperforms diverse exploration.
+Standard multi-objective methods like NSGA-II are designed to spread candidates across the full trade-off frontier. But when the goal is to pick the top 20 candidates for expensive lab validation, concentrated selection outperforms diverse exploration.
 
 ## Use it with your data
 
