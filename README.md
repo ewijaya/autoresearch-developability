@@ -3,6 +3,11 @@
 Multi-objective peptide candidate ranking via an autoresearch-style
 iterative loop on public data.
 
+<p align="center">
+  <img src="results/figures/fig2_loop_trajectory.png" alt="Autoresearch loop trajectory: 100 experiments, 12 kept improvements" width="700">
+</p>
+<p align="center"><em>100 autonomous experiments; 12 kept improvements progressing from weight tuning → two-stage reranking → oracle consensus voting.</em></p>
+
 ## What this is
 
 An autonomous loop iteratively improves a **ranking policy** that triages
