@@ -1,7 +1,7 @@
 # Manuscript PRD: autoresearch-developability
 
-**Working title:** Autonomous Multi-Objective Peptide Ranking via Iterative
-Policy Search on Public Benchmarks
+**Title:** Agent-Guided Ranking Policy Improvement for Peptide Drug
+Candidate Prioritization
 
 **Target venue:** NeurIPS 2026 Workshop on ML for Molecules (4-page + appendix),
 or Bioinformatics Application Note (4-page)
@@ -89,8 +89,8 @@ manuscript/
 \usepackage{booktabs, graphicx, amsmath, amssymb}
 \usepackage{hyperref, xcolor, multirow, subcaption, enumitem}
 
-\title{Autonomous Multi-Objective Peptide Ranking via
-       Iterative Policy Search on Public Benchmarks}
+\title{Agent-Guided Ranking Policy Improvement for Peptide Drug
+       Candidate Prioritization}
 
 \author{
   Edward Wijaya \\
