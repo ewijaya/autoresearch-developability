@@ -6,6 +6,10 @@ Policy Search on Public Benchmarks
 **Target venue:** NeurIPS 2026 Workshop on ML for Molecules (4-page + appendix),
 or Bioinformatics Application Note (4-page)
 
+**Companion paper:** Wijaya, 2026. "What an Autonomous Agent Discovers About
+Molecular Transformer Design: Does It Transfer?" arXiv:2603.28015
+https://arxiv.org/abs/2603.28015
+
 **Companion repo:** `autoresearch-mol` (architecture search for molecular
 transformers — same autoresearch framework, different domain)
 
@@ -147,8 +151,10 @@ manuscript/
 2. **The autoresearch paradigm.** Karpathy's autoresearch showed that an LLM
    agent can iteratively improve a system through a tight loop around a fixed
    evaluation harness and a single editable file. Our companion paper
-   (autoresearch-mol) demonstrated this for molecular transformer architecture
-   search. Here we adapt it to multi-objective ranking policy search.
+   \cite{wijaya2026autonomousagentdiscoversmolecular} demonstrated this for
+   molecular transformer architecture search across SMILES, protein, and NLP
+   domains (3,106 experiments). Here we adapt the same paradigm to
+   multi-objective ranking policy search for peptide candidate triage.
 
 3. **What we do.** We build a public benchmark from DBAASP (antimicrobial MIC),
    ToxinPred3 (toxicity), HLP (stability), and rule-based developability
@@ -192,7 +198,10 @@ manuscript/
 
 3. **Autonomous ML research.**
    Karpathy's autoresearch, ML-Agent-Bench, AI Scientist.
-   Our companion paper autoresearch-mol.
+   Our companion paper \cite{wijaya2026autonomousagentdiscoversmolecular}
+   applied this to molecular transformer design across 3 domains with
+   3,106 experiments — this paper extends it from architecture search
+   (single metric: val\_bpb) to ranking policy search (multi-objective).
    The one-editable-file + fixed-harness discipline.
 
 ### 4.4 `methodology.tex` (~1.5 pages)
@@ -382,16 +391,39 @@ All figures exist in `results/figures/` as PDF and PNG. Copy or symlink to `manu
 
 ## 7. References (key citations)
 
+**Companion paper (cite prominently in intro and methodology):**
+```bibtex
+@misc{wijaya2026autonomousagentdiscoversmolecular,
+      title={What an Autonomous Agent Discovers About Molecular Transformer
+             Design: Does It Transfer?},
+      author={Edward Wijaya},
+      year={2026},
+      eprint={2603.28015},
+      archivePrefix={arXiv},
+      primaryClass={cs.AI},
+      url={https://arxiv.org/abs/2603.28015},
+}
+```
+
+**Other key citations:**
 ```
 - Karpathy, A. autoresearch. GitHub, 2025.
-- Wijaya, E. autoresearch-mol. GitHub, 2026.
 - Deb, K. et al. A fast and elitist multiobjective genetic algorithm: NSGA-II. IEEE TEC, 2002.
 - Pirtskhalava, M. et al. DBAASP v4. NAR, 2024.
 - Gupta, S. et al. ToxinPred3. Briefings in Bioinformatics, 2024.
 - Sharma, A. et al. HLP: half-life prediction of peptides. Scientific Reports, 2014.
 - Lin, Z. et al. ESM-2: Language models of protein sequences at the scale of evolution. Science, 2023.
 - Ke, G. et al. LightGBM. NeurIPS, 2017.
+- Lu, C. et al. The AI Scientist. ICML, 2024.
+- Huang, Q. et al. ML-Agent-Bench. NeurIPS, 2023.
 ```
+
+**Framing note:** This paper is the second in a two-paper series. The
+companion paper (Wijaya, 2026; arXiv:2603.28015) applied the autoresearch
+paradigm to molecular transformer architecture search. This paper applies
+it to multi-objective peptide ranking — a different domain, a different
+editable surface (ranking policy vs neural architecture), and a different
+evaluation structure (multi-objective vs single-metric).
 
 ---
 
