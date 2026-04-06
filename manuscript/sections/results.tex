@@ -41,7 +41,7 @@ The agent-improved policy achieves the highest point estimate on both top-$k$ en
 No other strategy leads on all three metrics simultaneously.
 
 \textbf{Agent improved vs.\ NSGA-II.}
-The strongest comparison is against NSGA-II, the standard multi-objective optimization baseline: 0.650 vs.\ 0.444 top-$k$ enrichment, with non-overlapping 95\% CIs ([0.533, 0.767] vs.\ [0.267, 0.617]).
+The strongest comparison is against NSGA-II, the standard multi-objective optimization baseline: 0.650 vs.\ 0.444 top-$k$ enrichment, with substantially separated 95\% CIs ([0.533, 0.767] vs.\ [0.267, 0.617]).
 NSGA-II achieves the highest hypervolume (0.584), reflecting its design goal of spreading solutions across the Pareto front.
 However, for candidate triage where the objective is to identify the top 20 candidates rather than a diverse frontier, scalarization-based policies are better suited.
 
@@ -94,7 +94,7 @@ Table~\ref{tab:keeps} in Appendix~\ref{sec:supp_tables} lists all 12 kept experi
 \subsection{Multi-Objective Trade-Offs}
 \label{sec:multiobjective}
 
-Figure~\ref{fig:pareto_front} visualizes the multi-objective trade-off by plotting the top-20 candidates selected by each strategy in the (activity, $1 - \text{toxicity}$) plane across the three oracle definitions.
+Figure~\ref{fig:pareto_front} visualizes the multi-objective trade-off by plotting the top-20 candidates selected by three representative strategies in the (activity, $1 - \text{toxicity}$) plane across the three oracle definitions.
 
 \begin{figure}[t]
 \centering
@@ -169,7 +169,7 @@ Across 10 independent splits, agent improved outperforms weighted sum on all 10 
 
 On the primary validation split, the bootstrap 95\% CIs for agent improved ([0.533, 0.767]) and weighted sum ([0.483, 0.733]) overlap---the improvement is not statistically significant at 95\% confidence on a single split.
 The CIs are inherently wide because top-$k$ enrichment at $k = 20$ is a discrete metric with limited resolution.
-Against NSGA-II, the single-split CIs do not overlap ([0.533, 0.767] vs.\ [0.267, 0.617]).
+Against NSGA-II, the single-split CIs are substantially separated ([0.533, 0.767] vs.\ [0.267, 0.617]; point estimate gap of 0.206).
 
-In summary: the agent-improved policy reliably outperforms all baselines, with statistically significant margins against NSGA-II and weaker baselines.
-The margin over weighted sum is practically meaningful and cross-split-consistent, but does not reach 95\% significance on any single split.
+In summary: the agent-improved policy outperforms all baselines on point estimates, with large margins against NSGA-II and weaker baselines (substantially separated CIs).
+The margin over weighted sum is practically meaningful and cross-split-consistent, but bootstrap CIs overlap on any single split.

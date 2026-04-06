@@ -37,12 +37,12 @@ Developability & Rule-based & --- & 7 penalties & Deterministic & Length, charge
 \end{table}
 
 \textbf{Activity.}
-Antimicrobial activity is derived from minimum inhibitory concentration (MIC) values in the Database of Antimicrobial Activity and Structure of Peptides (DBAASP v4) \citep{pirtskhalava2024dbaasp}, filtered to \emph{E.~coli} ATCC 25922 as target strain.
+Antimicrobial activity is derived from minimum inhibitory concentration (MIC) values in the Database of Antimicrobial Activity and Structure of Peptides (DBAASP v4) \citep{pirtskhalava2021dbaasp}, filtered to \emph{E.~coli} ATCC 25922 as target strain.
 Raw MIC values are converted to $-\log_{10}$ potency and min-max normalized to $[0, 1]$.
 This is the only ground-truth endpoint; the remaining three are estimated.
 
 \textbf{Toxicity.}
-A random forest classifier is trained on binary toxicity labels from ToxinPred3 \citep{gupta2024toxinpred3}, using physicochemical features (amino acid composition, hydrophobicity, charge, molecular weight) augmented with ESM-2 embeddings \citep{lin2023esm2} from the 8M-parameter model.
+A random forest classifier is trained on binary toxicity labels from ToxinPred3 \citep{rathore2024toxinpred3}, using physicochemical features (amino acid composition, hydrophobicity, charge, molecular weight) augmented with ESM-2 embeddings \citep{lin2023esm2} from the 8M-parameter model.
 Held-out AUC is 0.920.
 An audit identified 8.9\% sequence overlap between the ToxinPred3 training set and DBAASP candidate pool; this overlap is flagged but not fully controlled in the current benchmark.
 
@@ -109,7 +109,7 @@ The agent can only modify \texttt{rank.py} (and optionally \texttt{rank\_learnab
 
 \textbf{Budget.}
 The loop executes 100 sequential experiments.
-Of these, 12 are kept (improvements) and 88 are discarded (regressions or ties).
+Of these, 12 are kept (11 improvements plus the initial baseline) and 88 are discarded (regressions or ties).
 
 \subsection{Baselines}
 \label{sec:baselines}

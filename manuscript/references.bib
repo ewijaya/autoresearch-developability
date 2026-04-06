@@ -85,10 +85,10 @@
   year={2020},
 }
 
-@article{xie2021mars,
+@inproceedings{xie2021mars,
   title={{MARS}: Markov molecular sampling for multi-objective drug discovery},
   author={Xie, Yutong and Shi, Chence and Zhou, Hao and Yang, Yuwei and Zhang, Weinan and Yu, Yong and Li, Lei},
-  journal={arXiv preprint arXiv:2103.10432},
+  booktitle={International Conference on Learning Representations},
   year={2021},
 }
 
@@ -105,36 +105,38 @@
 
 % Peptide databases and predictors
 
-@article{pirtskhalava2024dbaasp,
-  title={{DBAASP} v4: a knowledgebase of antimicrobial peptide activity and structure},
-  author={Pirtskhalava, Malak and Vishnepolsky, Boris and Grigolava, Margarita and Managadze, Giorgi},
+@article{pirtskhalava2021dbaasp,
+  title={{DBAASP} v3: database of antimicrobial/cytotoxic activity and structure of peptides as a resource for development of new therapeutics},
+  author={Pirtskhalava, Malak and Amstrong, Anthony A. and Grigolava, Margarita and Chubinidze, Maia and Alimbarashvili, Evgenia and Vishnepolsky, Boris and Gabrielian, Andrei and Rosenthal, Alex and Hurt, Darrell E. and Tartakovsky, Michael},
   journal={Nucleic Acids Research},
-  volume={52},
+  volume={49},
   number={D1},
-  pages={D419--D428},
-  year={2024},
+  pages={D288--D297},
+  year={2021},
+  doi={10.1093/nar/gkaa991},
   publisher={Oxford University Press},
 }
 
-@article{gupta2024toxinpred3,
-  title={{ToxinPred3}: An improved method for predicting the toxicity of peptides},
-  author={Gupta, Shubham and Sharma, Akanksha Kumar and Jain, Vinod and Raghava, Gajendra P.S.},
-  journal={Briefings in Bioinformatics},
-  volume={25},
-  number={1},
-  pages={bbad493},
+@article{rathore2024toxinpred3,
+  title={{ToxinPred} 3.0: An improved method for predicting the toxicity of peptides},
+  author={Rathore, Anand Singh and Choudhury, Shubham and Arora, Akanksha and Tijare, Purva and Raghava, Gajendra P.S.},
+  journal={Computers in Biology and Medicine},
+  volume={179},
+  pages={108926},
   year={2024},
-  publisher={Oxford University Press},
+  publisher={Elsevier},
+  doi={10.1016/j.compbiomed.2024.108926},
 }
 
 @article{sharma2014hlp,
-  title={Prediction of peptide half-life in plasma based on physicochemical properties},
-  author={Sharma, Akanksha and Singla, Deepak and Rashid, Mamoon and Raghava, Gajendra P.S.},
-  journal={Scientific Reports},
-  volume={4},
-  pages={4981},
+  title={Designing of peptides with desired half-life in intestine-like environment},
+  author={Sharma, Arun and Singla, Deepak and Rashid, Mamoon and Raghava, Gajendra P.S.},
+  journal={BMC Bioinformatics},
+  volume={15},
+  pages={282},
   year={2014},
-  publisher={Nature Publishing Group},
+  publisher={BioMed Central},
+  doi={10.1186/1471-2105-15-282},
 }
 
 % ESM-2
@@ -160,12 +162,11 @@
   year={2017},
 }
 
-@inproceedings{burges2010ranknet,
+@techreport{burges2010ranknet,
   title={From {RankNet} to {LambdaRank} to {LambdaMART}: An overview},
   author={Burges, Christopher J.C.},
-  booktitle={Learning},
-  volume={11},
-  pages={23--581},
+  institution={Microsoft Research},
+  number={MSR-TR-2010-82},
   year={2010},
 }
 
@@ -179,10 +180,12 @@
 }
 
 @inproceedings{huang2024mlagentbench,
-  title={{ML-Agent-Bench}: Evaluating language agents on machine learning experimentation},
+  title={{MLAgentBench}: Evaluating language agents on machine learning experimentation},
   author={Huang, Qian and Vora, Jian and Liang, Percy and Leskovec, Jure},
-  booktitle={Advances in Neural Information Processing Systems},
-  volume={36},
+  booktitle={Proceedings of the 41st International Conference on Machine Learning},
+  series={PMLR},
+  volume={235},
+  pages={20271--20309},
   year={2024},
 }
 
@@ -190,7 +193,7 @@
 
 @article{veltri2018ampscanner,
   title={Deep learning improves antimicrobial peptide recognition},
-  author={Veltri, Daniel and Kamath, Uday and Bhatt, Amarda},
+  author={Veltri, Daniel and Kamath, Uday and Shehu, Amarda},
   journal={Bioinformatics},
   volume={34},
   number={16},
@@ -199,22 +202,16 @@
   publisher={Oxford University Press},
 }
 
-@article{lee2023peptidevae,
-  title={Multi-objective antimicrobial peptide design via variational autoencoders},
-  author={Lee, Eric and Pellegrini, Marco and others},
-  journal={arXiv preprint arXiv:2302.12880},
-  year={2023},
-}
-
 @article{yan2022review,
   title={Recent progress in the discovery and design of antimicrobial peptides using traditional machine learning and deep learning},
-  author={Yan, Jielu and Bhadra, Pratiti and Li, Ang and Sethiya, Pooja and Qin, Luyao and Tai, Hee Kang and Wong, Koon Ho and Siu, Shirley W.I.},
+  author={Yan, Jielu and Cai, Jianxiu and Zhang, Bob and Wang, Yapeng and Wong, Derek F. and Siu, Shirley W.I.},
   journal={Antibiotics},
-  volume={12},
-  number={1},
-  pages={46},
+  volume={11},
+  number={10},
+  pages={1451},
   year={2022},
   publisher={MDPI},
+  doi={10.3390/antibiotics11101451},
 }
 
 @article{mooney2012peptidemoo,
@@ -249,16 +246,6 @@
   booktitle={Proceedings of the 32nd International ACM SIGIR Conference on Research and Development in Information Retrieval},
   pages={758--759},
   year={2009},
-}
-
-% Attention / Transformers
-
-@inproceedings{vaswani2017attention,
-  title={Attention is all you need},
-  author={Vaswani, Ashish and Shazeer, Noam and Parmar, Niki and Uszkoreit, Jakob and Jones, Llion and Gomez, Aidan N and Kaiser, {\L}ukasz and Polosukhin, Illia},
-  booktitle={Advances in Neural Information Processing Systems},
-  volume={30},
-  year={2017},
 }
 
 % NDCG

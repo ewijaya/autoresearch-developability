@@ -2,14 +2,14 @@
 \label{sec:discussion}
 
 \textbf{What the loop discovered.}
-The agent's 12 kept improvements follow a clear structural trajectory.
+The agent's 12 kept modifications (11 improvements over the baseline) follow a clear structural trajectory.
 Early experiments adjust scalarization weights---a form of hyperparameter tuning within the initial policy class.
 Mid-loop experiments introduce two-stage reranking and reciprocal rank fusion \citep{cormack2009rrf}, combining multiple scoring functions into a consensus.
 Late experiments add learned components (MLP, LambdaMART) trained on oracle-aligned labels.
 The agent independently discovered oracle consensus voting---prioritizing candidates that appear in at least two of three independent top-$k$ shortlists---a form of ensemble agreement selection that the authors did not pre-specify.
 
 \textbf{Agent search vs.\ random search.}
-The agent outperforms best-of-1{,}000 random weight search (0.650 vs.\ 0.611 top-$k$ enrichment), confirming that directed policy search adds value beyond blind exploration.
+The agent outperforms best-of-1{,}000 random weight search (0.650 vs.\ 0.611 top-$k$ enrichment), indicating that directed policy search adds value beyond blind exploration.
 Critically, the agent escapes the linear scalarization policy class entirely: consensus voting and learned reranking are structural innovations that no amount of random Dirichlet weight sampling can discover.
 This parallels findings from our companion paper \citep{wijaya2026autonomousagentdiscoversmolecular}, where the full agent outperformed random NAS on SMILES architecture search.
 

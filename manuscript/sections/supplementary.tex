@@ -30,13 +30,13 @@ Table~\ref{tab:keeps} lists all 12 kept experiments from the 100-experiment Code
 \textbf{Exp.} & \textbf{TopK} & \textbf{NDCG} & \textbf{H-mean} & \textbf{Description} \\
 \midrule
 1 & 0.683 & 0.972 & 0.802 & Baseline agent\_improved \\
-2 & 0.700 & 0.974 & 0.815 & Weight tuning: activity$=$0.50, toxicity$=$0.50, stability$=$0.30 \\
+2 & 0.700 & 0.974 & 0.814 & Weight tuning: activity$=$0.50, toxicity$=$0.50, stability$=$0.30 \\
 11 & 0.700 & 0.978 & 0.816 & Two-stage: weighted-sum shortlist reranked by threshold-gated score \\
 22 & 0.700 & 0.978 & 0.816 & Ensemble rerank: threshold-gated + rank-product \\
-26 & 0.700 & 0.979 & 0.817 & Reciprocal rank fusion of threshold-gated, rank-product, Pareto \\
+26 & 0.700 & 0.979 & 0.816 & Reciprocal rank fusion of threshold-gated, rank-product, Pareto \\
 32 & 0.717 & 0.974 & 0.826 & Oracle consensus: $\geq$2-of-3 vote shortlist + RRF \\
-38 & 0.717 & 0.976 & 0.827 & Consensus + LambdaMART oracle score + RRF tie-break \\
-41 & 0.717 & 0.979 & 0.828 & Consensus reranked by RRF of LambdaMART + 3 heuristics \\
+38 & 0.717 & 0.976 & 0.826 & Consensus + LambdaMART oracle score + RRF tie-break \\
+41 & 0.717 & 0.979 & 0.827 & Consensus reranked by RRF of LambdaMART + 3 heuristics \\
 61 & 0.717 & 0.980 & 0.828 & Consensus + MLP+LambdaMART ensemble filler \\
 65 & 0.717 & 0.980 & 0.828 & Final top-20 reranked by threshold-gated + learned tie-breaks \\
 93 & 0.717 & 0.981 & 0.828 & Per-oracle MLP augments learned ensemble \\

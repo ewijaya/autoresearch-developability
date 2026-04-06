@@ -1,8 +1,8 @@
 \begin{abstract}
 Peptide drug discovery requires simultaneous optimization across activity, toxicity, stability, and manufacturability, yet most computational approaches optimize a single endpoint.
 We adapt the autoresearch paradigm---where an LLM agent iteratively edits code against a fixed evaluation harness---from neural architecture search to multi-objective ranking policy search.
-On a public benchmark of 3{,}554 antimicrobial peptides from DBAASP, scored across four endpoints and evaluated against a three-oracle ensemble, 100 autonomous experiments yield 12 kept improvements that progress from weight tuning to oracle consensus voting to learned reranking.
-The agent-improved policy achieves 0.650 mean top-$k$ enrichment (bootstrap 95\% CI [0.533, 0.767]) and 0.982 NDCG, outperforming NSGA-II (0.444; non-overlapping CIs) and best-of-1{,}000 random weight search (0.611).
+On a public benchmark of 3{,}554 antimicrobial peptides from DBAASP, scored across four endpoints and evaluated against a three-oracle ensemble, 100 autonomous experiments yield 12 kept modifications (11 improvements over the baseline) that progress from weight tuning to oracle consensus voting to learned reranking.
+The agent-improved policy achieves 0.650 mean top-$k$ enrichment (bootstrap 95\% CI [0.533, 0.767]) and 0.982 NDCG, outperforming NSGA-II (0.444) and best-of-1{,}000 random weight search (0.611).
 The improvement over equal-weight scalarization (0.609) is consistent across 10 independent data splits ($0.650 \pm 0.034$ vs.\ $0.585 \pm 0.050$) but bootstrap confidence intervals overlap on any single split.
 We release the full pipeline as a reusable framework for multi-objective peptide candidate triage.
 \end{abstract}
