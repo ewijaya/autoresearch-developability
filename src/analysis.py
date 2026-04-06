@@ -594,17 +594,28 @@ def figure2_loop_trajectory():
     results = pd.read_csv(results_path, sep="\t")
     results["iteration"] = range(1, len(results) + 1)
     results["topk_enrichment"] = results["topk_enrichment"].astype(float)
+    results["ndcg"] = results["ndcg"].astype(float)
+
+    # Composite score: TopK (primary) + 2*NDCG (tiebreaker).
+    # Weight=2 ensures every keep is monotonically increasing while
+    # keeping TopK jumps as the dominant visual feature.
+    NDCG_WEIGHT = 2.0
+    results["composite"] = (results["topk_enrichment"]
+                            + NDCG_WEIGHT * results["ndcg"])
 
     keeps = results[results["status"] == "keep"].copy()
     n_keep = len(keeps)
     n_discard = (results["status"] == "discard").sum()
     n_total = len(results)
 
+    # Running best (composite)
+    running_best = results["composite"].cummax()
+
     # Shorten descriptions for annotation labels
-    def _short_desc(desc, max_len=45):
+    def _short_desc(desc, max_len=42):
         desc = str(desc)
-        # Strip common prefixes
-        for prefix in ["changed agent_improved to ", "increased ", "added "]:
+        for prefix in ["changed agent_improved to ", "increased ",
+                       "added ", "baseline "]:
             if desc.lower().startswith(prefix):
                 desc = desc[len(prefix):]
                 break
@@ -619,25 +630,20 @@ def figure2_loop_trajectory():
     if mask_discard.any():
         ax.scatter(
             results.loc[mask_discard, "iteration"],
-            results.loc[mask_discard, "topk_enrichment"],
+            results.loc[mask_discard, "composite"],
             c="#d5d8dc", s=20, zorder=1, edgecolors="#c0c5c9",
             linewidth=0.3, alpha=0.35, label="Discarded",
         )
 
-    # Green step line connecting keeps only (running best staircase)
+    # Green step line connecting keeps (running best staircase)
     if len(keeps) > 0:
-        # Build step coordinates: for each keep, hold the value until
-        # the next keep, then step up
         step_x = [keeps["iteration"].iloc[0]]
-        step_y = [keeps["topk_enrichment"].iloc[0]]
+        step_y = [keeps["composite"].iloc[0]]
         for i in range(1, len(keeps)):
-            # Horizontal to the next keep's x
             step_x.append(keeps["iteration"].iloc[i])
             step_y.append(step_y[-1])
-            # Vertical step up
             step_x.append(keeps["iteration"].iloc[i])
-            step_y.append(keeps["topk_enrichment"].iloc[i])
-        # Extend to the end
+            step_y.append(keeps["composite"].iloc[i])
         step_x.append(n_total)
         step_y.append(step_y[-1])
 
@@ -646,7 +652,7 @@ def figure2_loop_trajectory():
 
         # Green circle markers on each keep
         ax.scatter(
-            keeps["iteration"], keeps["topk_enrichment"],
+            keeps["iteration"], keeps["composite"],
             c="#2ecc71", s=70, zorder=3, edgecolors="#1a9c4a",
             linewidth=1.2, marker="o",
             label=f"Kept ({n_keep})",
@@ -655,13 +661,12 @@ def figure2_loop_trajectory():
         # Annotate each keep with short description (angled)
         for i, (_, row) in enumerate(keeps.iterrows()):
             label = _short_desc(row.get("description", ""))
-            # Alternate annotation offset to reduce overlap
-            y_off = 12 + (i % 3) * 10
+            y_off = 12 + (i % 3) * 12
             x_off = 8
 
             ax.annotate(
                 label,
-                xy=(row["iteration"], row["topk_enrichment"]),
+                xy=(row["iteration"], row["composite"]),
                 xytext=(x_off, y_off), textcoords="offset points",
                 fontsize=6.5, color="#27ae60", alpha=0.85,
                 rotation=30, ha="left", va="bottom",
@@ -669,19 +674,20 @@ def figure2_loop_trajectory():
                                 lw=0.8, alpha=0.6),
             )
 
-    # Y-axis: zoom to the action range (higher is better, flipped vs Karpathy)
+    # Y-axis: zoom to keeps range
     if len(keeps) > 0:
-        y_min = keeps["topk_enrichment"].min()
-        y_max = keeps["topk_enrichment"].max()
+        y_min = keeps["composite"].min()
+        y_max = keeps["composite"].max()
     else:
-        y_min = results["topk_enrichment"].min()
-        y_max = results["topk_enrichment"].max()
+        y_min = results["composite"].min()
+        y_max = results["composite"].max()
     y_range = y_max - y_min
-    y_pad = max(y_range * 1.5, 0.02)
+    y_pad = max(y_range * 1.2, 0.02)
     ax.set_ylim(y_min - y_pad * 0.3, y_max + y_pad)
 
     ax.set_xlabel("Experiment #", fontsize=12)
-    ax.set_ylabel("Top-k Enrichment (higher is better)", fontsize=12)
+    ax.set_ylabel("Composite Score: TopK + 2 x NDCG (higher is better)",
+                  fontsize=11)
     ax.set_title(f"Autoresearch Progress: {n_total} Experiments, "
                  f"{n_keep} Kept Improvements", fontsize=13)
     ax.legend(loc="lower right", fontsize=10, framealpha=0.9)
