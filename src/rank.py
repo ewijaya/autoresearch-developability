@@ -33,6 +33,8 @@ def rank_candidates(df, strategy="weighted_sum", **kwargs):
         "agent_improved": _rank_agent_improved,
         "mlp_learned": _rank_mlp_learned,
         "lambdamart": _rank_lambdamart,
+        "random_weight_search": _rank_random_weight_search,
+        "nsga2_crowding": _rank_nsga2_crowding,
     }
     if strategy not in rankers:
         raise ValueError(f"Unknown strategy: {strategy}. Options: {list(rankers)}")
@@ -374,3 +376,140 @@ def _rank_lambdamart(df, **kwargs):
     """
     from src.rank_learnable import rank_lambdamart
     return rank_lambdamart(df, **kwargs)
+
+
+# --- External comparison baselines (frozen, not editable by the loop) ---
+
+
+def _rank_random_weight_search(df, n_samples=1000, seed=42, k=20, **kwargs):
+    """Best-of-N random weight vectors (random hyperparameter search).
+
+    Samples N random weight vectors from a Dirichlet distribution,
+    evaluates each using the same weighted-sum scalarization, and
+    returns the ranking from the best one (by internal top-k enrichment
+    against the rank_product oracle as a quick proxy).
+    """
+    from src.evaluate import compute_reference_scores, topk_enrichment
+
+    rng = np.random.RandomState(seed)
+    ref_scores = compute_reference_scores(df)
+    ref = ref_scores["rank_product"]
+
+    best_enrichment = -1.0
+    best_ranking = None
+
+    for _ in range(n_samples):
+        raw = rng.dirichlet([1, 1, 1, 1])
+        w = {
+            "activity": float(raw[0]),
+            "toxicity": float(raw[1]),
+            "stability": float(raw[2]),
+            "dev_penalty": float(raw[3]),
+        }
+        ranking = _rank_weighted_sum(df, weights=w)
+        enrich = topk_enrichment(ranking, ref, k=k)
+
+        if enrich > best_enrichment:
+            best_enrichment = enrich
+            best_ranking = ranking
+
+    return best_ranking
+
+
+def _rank_nsga2_crowding(df, **kwargs):
+    """NSGA-II Pareto ranking with crowding distance tie-break.
+
+    Standard multi-objective optimization baseline. Assigns each
+    candidate a non-domination rank then breaks ties within each
+    front by crowding distance.
+    """
+    objectives = np.column_stack([
+        _norm_col(df["activity"]),
+        1.0 - _norm_col(df["toxicity"]),
+        _norm_col(df["stability"]),
+        1.0 - _norm_col(df["dev_penalty"]),
+    ])
+
+    fronts = _fast_non_dominated_sort(objectives)
+
+    rank_order = []
+    for front in fronts:
+        if not front:
+            continue
+        cd = _crowding_distance(objectives[front])
+        sorted_front = [front[i] for i in np.argsort(-cd)]
+        rank_order.extend(sorted_front)
+
+    return [df.index[i] for i in rank_order]
+
+
+def _norm_col(s):
+    """Min-max normalize a Series to [0, 1]."""
+    r = s.max() - s.min()
+    if r < 1e-10:
+        return np.zeros(len(s))
+    return ((s - s.min()) / r).values
+
+
+def _fast_non_dominated_sort(objectives):
+    """NSGA-II fast non-dominated sorting."""
+    n = len(objectives)
+    domination_count = np.zeros(n, dtype=int)
+    dominated_set = [[] for _ in range(n)]
+    fronts = [[]]
+
+    for i in range(n):
+        for j in range(i + 1, n):
+            if _dominates(objectives[i], objectives[j]):
+                dominated_set[i].append(j)
+                domination_count[j] += 1
+            elif _dominates(objectives[j], objectives[i]):
+                dominated_set[j].append(i)
+                domination_count[i] += 1
+
+    for i in range(n):
+        if domination_count[i] == 0:
+            fronts[0].append(i)
+
+    k = 0
+    while fronts[k]:
+        next_front = []
+        for i in fronts[k]:
+            for j in dominated_set[i]:
+                domination_count[j] -= 1
+                if domination_count[j] == 0:
+                    next_front.append(j)
+        k += 1
+        fronts.append(next_front)
+
+    if not fronts[-1]:
+        fronts.pop()
+    return fronts
+
+
+def _dominates(a, b):
+    """True if a dominates b (all >= and at least one >)."""
+    return np.all(a >= b) and np.any(a > b)
+
+
+def _crowding_distance(objectives_subset):
+    """Compute crowding distance for a set of solutions."""
+    m, n_obj = objectives_subset.shape
+    if m <= 2:
+        return np.full(m, np.inf)
+
+    cd = np.zeros(m)
+    for j in range(n_obj):
+        order = np.argsort(objectives_subset[:, j])
+        cd[order[0]] = np.inf
+        cd[order[-1]] = np.inf
+
+        obj_range = (objectives_subset[order[-1], j] -
+                     objectives_subset[order[0], j])
+        if obj_range < 1e-10:
+            continue
+
+        for i in range(1, m - 1):
+            cd[order[i]] += ((objectives_subset[order[i + 1], j] -
+                              objectives_subset[order[i - 1], j]) / obj_range)
+    return cd
