@@ -561,14 +561,35 @@ def figure2_loop_trajectory():
     """Figure 2: Iteration number vs summary metric (loop trajectory).
 
     Scatter plot with keep/discard coloring and a running-best line.
-    Uses results.tsv as the data source.
+    Prefers the Codex loop results (results/loops/*/results.tsv) over
+    the root results.tsv. Falls back to root if no loop data exists.
     """
     plt, sns = _ensure_matplotlib()
 
-    results_path = Path("results.tsv")
+    # Find loop results — prefer the most recent loop with the most rows
+    loop_dir = RESULTS_DIR / "loops"
+    loop_files = sorted(loop_dir.glob("*/results.tsv")) if loop_dir.exists() else []
+
+    results_path = None
+    best_rows = 0
+    for lf in loop_files:
+        try:
+            n = sum(1 for line in open(lf) if line.strip() and not line.startswith("commit"))
+            if n > best_rows:
+                best_rows = n
+                results_path = lf
+        except OSError:
+            continue
+
+    # Fall back to root results.tsv
+    if results_path is None or best_rows == 0:
+        results_path = Path("results.tsv")
+
     if not results_path.exists():
-        logger.warning("results.tsv not found, skipping Figure 2")
+        logger.warning("No results.tsv found, skipping Figure 2")
         return
+
+    logger.info(f"Figure 2: using {results_path} ({best_rows} experiments)")
 
     results = pd.read_csv(results_path, sep="\t")
     results["iteration"] = range(1, len(results) + 1)
@@ -587,27 +608,48 @@ def figure2_loop_trajectory():
     # Running best
     running_best = results["topk_enrichment"].cummax()
 
-    fig, ax = plt.subplots(figsize=(10, 5))
+    fig, ax = plt.subplots(figsize=(12, 5))
 
     # Plot running best line first (behind points)
     ax.plot(results["iteration"], running_best, color="#2c3e50",
-            linewidth=2, alpha=0.7, label="Running best", zorder=1)
+            linewidth=2.5, alpha=0.8, label="Running best", zorder=1)
 
     # Scatter by status
-    for status in results["status"].unique():
+    for status in ["keep", "discard", "baseline", "crash", "ambiguous"]:
         mask = results["status"] == status
+        if not mask.any():
+            continue
         ax.scatter(
             results.loc[mask, "iteration"],
             results.loc[mask, "topk_enrichment"],
             c=color_map.get(status, "#95a5a6"),
             label=status.capitalize(),
-            s=80, zorder=2, edgecolors="white", linewidth=0.5,
+            s=60, zorder=2, edgecolors="white", linewidth=0.5,
+            alpha=0.8,
         )
 
-    ax.set_xlabel("Iteration")
+    # Annotate key milestones
+    keeps = results[results["status"] == "keep"]
+    if len(keeps) > 0:
+        first_keep = keeps.iloc[0]
+        last_keep = keeps.iloc[-1]
+        ax.annotate(
+            f"Best: {last_keep['topk_enrichment']:.3f}",
+            xy=(last_keep["iteration"], last_keep["topk_enrichment"]),
+            xytext=(10, 15), textcoords="offset points",
+            fontsize=9, fontweight="bold",
+            arrowprops=dict(arrowstyle="->", color="#2c3e50", lw=1.2),
+        )
+
+    n_keep = len(keeps)
+    n_discard = (results["status"] == "discard").sum()
+    n_total = len(results)
+
+    ax.set_xlabel("Experiment")
     ax.set_ylabel("Top-k Enrichment (mean across oracles)")
-    ax.set_title("Autoresearch Loop Trajectory")
-    ax.legend()
+    ax.set_title(f"Autoresearch Loop: {n_total} Experiments "
+                 f"({n_keep} keep, {n_discard} discard)")
+    ax.legend(loc="lower right")
     fig.tight_layout()
 
     FIGURES_DIR.mkdir(parents=True, exist_ok=True)
