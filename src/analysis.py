@@ -594,9 +594,17 @@ def figure2_loop_trajectory():
     results = pd.read_csv(results_path, sep="\t")
     results["iteration"] = range(1, len(results) + 1)
     results["topk_enrichment"] = results["topk_enrichment"].astype(float)
+    results["ndcg"] = results["ndcg"].astype(float)
+
+    # Combined score: topk is primary, ndcg breaks ties.
+    # This mirrors the keep/discard logic in session_tools.py exactly:
+    #   keep if topk > best_topk, OR (topk == best_topk AND ndcg > best_ndcg)
+    # By encoding as topk + ndcg * 0.001 every keep becomes a unique step.
+    results["combined_score"] = (results["topk_enrichment"]
+                                 + results["ndcg"] * 0.001)
 
     # Running best as step function (like autoresearch-mol style)
-    running_best = results["topk_enrichment"].cummax()
+    running_best = results["combined_score"].cummax()
 
     keeps = results[results["status"] == "keep"]
     n_keep = len(keeps)
@@ -614,7 +622,7 @@ def figure2_loop_trajectory():
     if mask_discard.any():
         ax.scatter(
             results.loc[mask_discard, "iteration"],
-            results.loc[mask_discard, "topk_enrichment"],
+            results.loc[mask_discard, "combined_score"],
             c="#d5d8dc", s=20, zorder=1, edgecolors="#c0c5c9",
             linewidth=0.3, alpha=0.4, label="Discard",
         )
@@ -624,7 +632,7 @@ def figure2_loop_trajectory():
     if mask_keep.any():
         ax.scatter(
             results.loc[mask_keep, "iteration"],
-            results.loc[mask_keep, "topk_enrichment"],
+            results.loc[mask_keep, "combined_score"],
             c="#2ecc71", s=80, zorder=3, edgecolors="#1a9c4a",
             linewidth=1.0, alpha=0.95, marker="D", label="Keep",
         )
@@ -634,31 +642,30 @@ def figure2_loop_trajectory():
         first_keep = keeps.iloc[0]
         last_keep = keeps.iloc[-1]
         ax.annotate(
-            f"{first_keep['topk_enrichment']:.3f}",
-            xy=(first_keep["iteration"], first_keep["topk_enrichment"]),
+            f"TopK={first_keep['topk_enrichment']:.3f}",
+            xy=(first_keep["iteration"], first_keep["combined_score"]),
             xytext=(-15, -20), textcoords="offset points",
             fontsize=9, color="#555",
             arrowprops=dict(arrowstyle="->", color="#999", lw=1),
         )
         ax.annotate(
-            f"Best: {last_keep['topk_enrichment']:.3f}",
-            xy=(last_keep["iteration"], last_keep["topk_enrichment"]),
+            f"Best: TopK={last_keep['topk_enrichment']:.3f}, "
+            f"NDCG={last_keep['ndcg']:.3f}",
+            xy=(last_keep["iteration"], last_keep["combined_score"]),
             xytext=(10, 15), textcoords="offset points",
             fontsize=10, fontweight="bold", color="#2c3e50",
             arrowprops=dict(arrowstyle="->", color="#2c3e50", lw=1.5),
         )
 
-    # Tight y-axis: zoom to just the staircase range
-    # Only look at keeps + discards near the top to set the range
+    # Tight y-axis: zoom to the staircase range
     best_val = running_best.iloc[-1]
     first_val = running_best.iloc[0]
     y_range = best_val - first_val
-    # Pad to show ~3x the step range so stairs look steep
-    y_pad = max(y_range * 1.5, 0.02)
+    y_pad = max(y_range * 1.0, 0.01)
     ax.set_ylim(first_val - y_pad, best_val + y_pad * 0.5)
 
     ax.set_xlabel("Experiment", fontsize=11)
-    ax.set_ylabel("Top-k Enrichment (higher is better)", fontsize=11)
+    ax.set_ylabel("Summary Score (TopK + NDCG tiebreak)", fontsize=11)
     ax.set_title(f"Autoresearch Loop: {n_total} Experiments "
                  f"({n_keep} keep, {n_discard} discard)", fontsize=12)
     ax.legend(loc="lower right", fontsize=10)
