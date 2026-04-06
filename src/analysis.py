@@ -595,84 +595,70 @@ def figure2_loop_trajectory():
     results["iteration"] = range(1, len(results) + 1)
     results["topk_enrichment"] = results["topk_enrichment"].astype(float)
 
-    # Running best
+    # Running best as step function (like autoresearch-mol style)
     running_best = results["topk_enrichment"].cummax()
 
-    fig, ax = plt.subplots(figsize=(12, 5))
+    keeps = results[results["status"] == "keep"]
+    n_keep = len(keeps)
+    n_discard = (results["status"] == "discard").sum()
+    n_total = len(results)
 
-    # Plot discards FIRST (behind everything) in faded grey
+    fig, ax = plt.subplots(figsize=(10, 5))
+
+    # Step plot for running best — the main visual
+    ax.step(results["iteration"], running_best, where="post",
+            color="#2c3e50", linewidth=2.5, label="Running best", zorder=2)
+
+    # Faded grey dots for discards (behind step line)
     mask_discard = results["status"] == "discard"
     if mask_discard.any():
         ax.scatter(
             results.loc[mask_discard, "iteration"],
             results.loc[mask_discard, "topk_enrichment"],
-            c="#d5d8dc", label="Discard",
-            s=35, zorder=1, edgecolors="#bdc3c7", linewidth=0.3,
-            alpha=0.5,
+            c="#d5d8dc", s=20, zorder=1, edgecolors="#c0c5c9",
+            linewidth=0.3, alpha=0.4, label="Discard",
         )
 
-    # Running best line (on top of discards, behind keeps)
-    ax.plot(results["iteration"], running_best, color="#2c3e50",
-            linewidth=2.5, alpha=0.9, label="Running best", zorder=2)
-
-    # Keep points (prominent, on top)
+    # Green diamonds for keeps (on top)
     mask_keep = results["status"] == "keep"
     if mask_keep.any():
         ax.scatter(
             results.loc[mask_keep, "iteration"],
             results.loc[mask_keep, "topk_enrichment"],
-            c="#2ecc71", label="Keep",
-            s=90, zorder=3, edgecolors="#27ae60", linewidth=1.0,
-            alpha=0.95, marker="D",
+            c="#2ecc71", s=80, zorder=3, edgecolors="#1a9c4a",
+            linewidth=1.0, alpha=0.95, marker="D", label="Keep",
         )
 
-    # Baseline points
-    mask_baseline = results["status"] == "baseline"
-    if mask_baseline.any():
-        ax.scatter(
-            results.loc[mask_baseline, "iteration"],
-            results.loc[mask_baseline, "topk_enrichment"],
-            c="#3498db", label="Baseline",
-            s=70, zorder=3, edgecolors="#2980b9", linewidth=0.8,
-            alpha=0.9,
-        )
-
-    # Crash points
-    mask_crash = results["status"] == "crash"
-    if mask_crash.any():
-        ax.scatter(
-            results.loc[mask_crash, "iteration"],
-            results.loc[mask_crash, "topk_enrichment"],
-            c="#e74c3c", label="Crash",
-            s=50, zorder=3, edgecolors="white", linewidth=0.5,
-            marker="x",
-        )
-
-    # Annotate best result
-    keeps = results[results["status"] == "keep"]
-    if len(keeps) > 0:
+    # Annotate first and last keep
+    if len(keeps) > 1:
+        first_keep = keeps.iloc[0]
         last_keep = keeps.iloc[-1]
+        ax.annotate(
+            f"{first_keep['topk_enrichment']:.3f}",
+            xy=(first_keep["iteration"], first_keep["topk_enrichment"]),
+            xytext=(-15, -20), textcoords="offset points",
+            fontsize=9, color="#555",
+            arrowprops=dict(arrowstyle="->", color="#999", lw=1),
+        )
         ax.annotate(
             f"Best: {last_keep['topk_enrichment']:.3f}",
             xy=(last_keep["iteration"], last_keep["topk_enrichment"]),
-            xytext=(10, 18), textcoords="offset points",
+            xytext=(10, 15), textcoords="offset points",
             fontsize=10, fontweight="bold", color="#2c3e50",
             arrowprops=dict(arrowstyle="->", color="#2c3e50", lw=1.5),
         )
 
-    n_keep = len(keeps)
-    n_discard = mask_discard.sum()
-    n_total = len(results)
-
-    # Zoom into the action range — use a broken y-axis effect by
-    # setting ylim to show the staircase clearly. Most discards are
-    # between 0.45-0.72, keeps are 0.68-0.72.
-    y_min = max(0.0, results["topk_enrichment"].min() - 0.05)
-    y_max = results["topk_enrichment"].max() + 0.03
-    ax.set_ylim(y_min, y_max)
+    # Tight y-axis: zoom to just the staircase range
+    # Only look at keeps + discards near the top to set the range
+    best_val = running_best.iloc[-1]
+    first_val = running_best.iloc[0]
+    y_range = best_val - first_val
+    # Pad to show ~3x the step range so stairs look steep
+    y_pad = max(y_range * 1.5, 0.02)
+    ax.set_ylim(first_val - y_pad, best_val + y_pad * 0.5)
 
     ax.set_xlabel("Experiment", fontsize=11)
-    ax.set_ylabel("Top-k Enrichment (mean across oracles)", fontsize=11)
+    ax.set_ylabel("Top-k Enrichment (higher is better)", fontsize=11)
     ax.set_title(f"Autoresearch Loop: {n_total} Experiments "
                  f"({n_keep} keep, {n_discard} discard)", fontsize=12)
     ax.legend(loc="lower right", fontsize=10)
