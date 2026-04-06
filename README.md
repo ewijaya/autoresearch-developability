@@ -89,7 +89,6 @@ official policy was **not** changed. See `docs/prompt3-summary.md`.
 autoresearch-developability/
 ├── program.md                 # Agent operating manual
 ├── pyproject.toml             # Dependencies
-├── results.tsv                # Top-level loop log snapshot / compatibility copy
 ├── src/
 │   ├── prepare.py             # Fixed: data loading, splits, leakage control
 │   ├── rank.py                # EDITABLE: ranking policy (agent modifies this)
@@ -132,11 +131,9 @@ See `program.md` for the full agent operating rules.
 
 ### Loop log location
 
-Future loop-session logs should be written under `results/loops/` using a
-session-specific filename such as `results/loops/prompt4_results.tsv`.
-The root `results.tsv` is kept as a top-level snapshot / compatibility file;
-`docs/prompt3-summary.md` is the narrative checkpoint for the current official
-winner.
+All experiment logs live under `results/loops/`:
+- `results/loops/phase3_manual_results.tsv` — Phase 3 manual experiments (20 rows)
+- `results/loops/prompt5/results.tsv` — Phase 4 Codex loop (100 experiments)
 
 ## Baselines
 

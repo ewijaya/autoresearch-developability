@@ -581,12 +581,12 @@ def figure2_loop_trajectory():
         except OSError:
             continue
 
-    # Fall back to root results.tsv
+    # Fall back to phase3 manual results
     if results_path is None or best_rows == 0:
-        results_path = Path("results.tsv")
+        results_path = RESULTS_DIR / "loops" / "phase3_manual_results.tsv"
 
     if not results_path.exists():
-        logger.warning("No results.tsv found, skipping Figure 2")
+        logger.warning("No loop results found, skipping Figure 2")
         return
 
     logger.info(f"Figure 2: using {results_path} ({best_rows} experiments)")
@@ -799,13 +799,13 @@ def figure5_weight_sensitivity():
     """Figure 5: Weight sensitivity analysis from Prompt 3b results.
 
     Bar chart showing how perturbing each weight affects top-k enrichment.
-    Uses results.tsv data from the p3b_ experiments.
+    Uses phase3 manual results data from the p3b_ experiments.
     """
     plt, sns = _ensure_matplotlib()
 
-    results_path = Path("results.tsv")
+    results_path = RESULTS_DIR / "loops" / "phase3_manual_results.tsv"
     if not results_path.exists():
-        logger.warning("results.tsv not found, skipping Figure 5")
+        logger.warning("phase3_manual_results.tsv not found, skipping Figure 5")
         return
 
     results = pd.read_csv(results_path, sep="\t")

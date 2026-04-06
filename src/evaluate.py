@@ -28,7 +28,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 PROCESSED_DIR = Path("data/processed")
-RESULTS_FILE = Path("results.tsv")
+RESULTS_FILE = Path("results/loops/phase3_manual_results.tsv")
 
 
 # --- Metric functions ---

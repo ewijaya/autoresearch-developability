@@ -14,8 +14,7 @@ if git diff --quiet HEAD && git diff --cached --quiet && [ -z "$(git ls-files --
 fi
 
 # Stage results and data manifests (not source code — that should be manual)
-git add results.tsv \
-    results/loops/*/results.tsv \
+git add results/loops/*/results.tsv \
     results/loops/*/summary.json \
     results/ablations/ \
     results/figures/ \
