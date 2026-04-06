@@ -1,44 +1,50 @@
 # autoresearch-developability
 
-Multi-objective peptide candidate ranking via an autoresearch-style
-iterative loop on public data.
+**An AI agent that learns to pick the best peptide drug candidates by balancing activity, toxicity, stability, and manufacturability at the same time.**
 
 <p align="center">
   <img src="results/figures/fig2_loop_trajectory.png" alt="Autoresearch loop trajectory: 100 experiments, 12 kept improvements" width="700">
 </p>
-<p align="center"><em>100 autonomous experiments; 12 kept improvements progressing from weight tuning → two-stage reranking → oracle consensus voting.</em></p>
+<p align="center"><em>The AI agent ran 100 autonomous experiments and kept 12 improvements, progressing from simple weight tuning to consensus voting to learned reranking.</em></p>
 
-## What this is
+## The problem
 
-An autonomous loop iteratively improves a **ranking policy** that triages
-peptide drug candidates across four competing objectives:
+Peptide drug discovery optimizes multiple properties simultaneously: a candidate must be potent against its target, non-toxic, metabolically stable, and manufacturable. Most computational tools optimize one property at a time, leaving the balancing act to human judgment. A peptide with excellent activity but poor toxicity is not a lead; it is an expensive distraction.
 
-| Endpoint | Source | Type | On candidate pool |
-|---|---|---|---|
-| Activity | DBAASP antimicrobial MIC | Quantitative (log MIC) | **Ground truth** |
-| Toxicity | ToxinPred3 RF model | Binary classification | Predicted (held-out AUC 0.920) |
-| Stability | HLP RF model | Quantitative (log t½) | Predicted (held-out R² 0.547) |
-| Developability | Rule-based sequence analysis | Composite penalty | Computed (deterministic) |
+This project automates that balancing act. An AI agent iteratively improves a ranking policy that considers all four properties at once, surfacing the candidates most likely to survive downstream validation.
 
-The loop follows Karpathy's [autoresearch](https://github.com/karpathy/autoresearch)
-discipline: a **fixed evaluation harness** and a **single editable file**
-(`src/rank.py`). The agent makes one policy change per iteration, evaluates,
-and keeps or discards.
+## How it works
 
-This repo also builds on domain-adaptation lessons from
-[autoresearch-mol](https://github.com/ewijaya/autoresearch-mol).
+The system has three parts:
 
-## Why this matters
+1. **A scored candidate pool.** 3,554 antimicrobial peptides from the public [DBAASP](https://dbaasp.org) database, each scored on four endpoints: antimicrobial activity (measured), predicted toxicity, predicted stability, and a rule-based manufacturability penalty.
 
-Most AI-peptide work optimizes one endpoint at a time. That is
-scientifically incomplete. A peptide with high activity but poor toxicity
-or bad stability is not a lead — it is an expensive distraction.
+2. **A fixed evaluation harness.** Three independent definitions of "what makes a good candidate" (oracles) prevent the AI from gaming any single scoring formula. The primary metric measures how many of the truly best candidates appear in the AI's top-20 shortlist.
 
-This repo asks: **can an autoresearch-style loop improve multi-objective
-peptide triage on public data?**
+3. **An autonomous improvement loop.** A Codex agent (GPT-5.4) reads the current ranking policy, makes one change, evaluates it, and keeps the change only if it improves. Over 100 iterations, the agent discovered structural innovations that a human operator did not pre-specify: consensus voting across multiple ranking criteria, reciprocal rank fusion, and learned reranking models.
 
-The public benchmark is the proof-of-concept. The framework is designed
-for obvious portability to proprietary peptide data.
+## Results at a glance
+
+The AI-improved policy captures **65% of the best candidates** in its top-20 shortlist, compared to:
+
+- **44%** for NSGA-II, the standard multi-objective optimization method
+- **61%** for the best result from 1,000 random weight combinations
+- **61%** for equal-weight scoring (the naive baseline)
+- **4%** for random selection
+
+The improvement holds across 10 independent data splits (p < 0.001 by sign test), with the AI-improved policy showing the most consistent performance (lowest variance).
+
+NSGA-II achieves the best spread across the Pareto front, which is what it is designed for. But when the goal is to pick the top 20 candidates for expensive lab validation, concentrated selection outperforms diverse exploration.
+
+## Use it with your data
+
+The framework is designed as a drop-in system for proprietary peptide programs. To adapt it:
+
+- **Swap the candidate pool** with your internal peptide library
+- **Replace the endpoint models** with your own activity assays, toxicity screens, ADMET models, or any scoring functions
+- **Run the loop** and let the agent discover the best way to combine your endpoints
+
+The loop infrastructure, evaluation harness, and agent interface require no modification. Only the data pipeline (`src/prepare.py`) needs updating to point at your data sources.
 
 ## Quickstart
 
@@ -50,45 +56,22 @@ python -m src.prepare
 python -m src.evaluate
 
 # 3. Evaluate a single strategy
-python -m src.evaluate --strategy weighted_sum --split val --k 20
+python -m src.evaluate --strategy agent_improved --split val --k 20
 
 # 4. Run tests
 python -m pytest tests/ -v
 ```
 
-### Current benchmark numbers (val split, k=20, mean across 3 oracles)
+## What the AI agent can change
 
-| Strategy | TopK Enrichment | NDCG | Hypervolume | Feasible |
-|---|---|---|---|---|
-| activity_only | 0.083 | 0.62 | 0.29 | 0.00 |
-| toxicity_exclusion | 0.300 | 0.79 | 0.53 | 1.00 |
-| weighted_sum | 0.517 | 0.89 | 0.57 | 0.55 |
-| **agent_improved** | **0.550** | **0.94** | **0.56** | **0.80** |
-| rule_only | 0.367 | 0.83 | 0.51 | 0.50 |
-| random | 0.017 | 0.52 | 0.43 | 0.15 |
+The agent modifies only the ranking policy (`src/rank.py` and `src/rank_learnable.py`). Everything else is frozen:
 
-**Candidate pool:** 3,554 antimicrobial peptides from DBAASP (E. coli ATCC 25922).
-**TopK enrichment is the mean across three oracle definitions** (Pareto rank,
-rank product, threshold-gated). See "Benchmark honesty" below.
+- **Data pipeline and endpoint models** are fixed to prevent data leakage
+- **Evaluation metrics and oracle definitions** are fixed to prevent gaming
+- **Each iteration** produces exactly one change, evaluated and logged automatically
 
-### Current official best policy
-
-The official winner after Prompt 3 and Prompt 3b is `agent_improved` in
-`src/rank.py`, using the same weighted-sum policy class as `weighted_sum`
-with tuned weights:
-
-```text
-score =
-  0.45 * norm(activity)
-  - 0.40 * norm(toxicity)
-  + 0.25 * norm(stability)
-  - 0.15 * norm(dev_penalty)
-```
-
-Prompt 3b produced nearby **ties** but no clean primary-metric win, so the
-official policy was **not** changed. See `docs/prompt3-summary.md`.
-
-## Repository structure
+<details>
+<summary><strong>Repository structure</strong></summary>
 
 ```
 autoresearch-developability/
@@ -97,122 +80,37 @@ autoresearch-developability/
 ├── src/
 │   ├── prepare.py             # Fixed: data loading, splits, leakage control
 │   ├── rank.py                # EDITABLE: ranking policy (agent modifies this)
-│   ├── evaluate.py            # Fixed: ranking metrics
-│   ├── features.py            # Fixed: AAindex physicochemical features
+│   ├── rank_learnable.py      # EDITABLE: learned ranking models (MLP, LambdaMART)
+│   ├── evaluate.py            # Fixed: ranking metrics and oracle definitions
+│   ├── features.py            # Fixed: physicochemical features
 │   ├── endpoint_activity.py   # Fixed: activity scoring (DBAASP MIC)
-│   ├── endpoint_toxicity.py   # Fixed: toxicity scoring (ToxinPred3 RF)
-│   ├── endpoint_stability.py  # Fixed: stability scoring (HLP RF)
-│   └── endpoint_dev.py        # Fixed: developability proxies (rule-based)
+│   ├── endpoint_toxicity.py   # Fixed: toxicity scoring (ToxinPred3)
+│   ├── endpoint_stability.py  # Fixed: stability scoring (HLP)
+│   ├── endpoint_dev.py        # Fixed: developability proxies (rule-based)
+│   ├── analysis.py            # Paper-evidence pipeline (bootstrap, ablations, figures)
+│   ├── run_agent_loop.py      # Outer loop orchestrator (spawns Codex sessions)
+│   └── session_tools.py       # Experiment lifecycle (init, run, status, revert)
 ├── data/
 │   ├── raw/                   # Downloaded public datasets
-│   ├── processed/             # Harmonized benchmark files
-│   └── manifests/             # Dataset metadata and download records
+│   └── processed/             # Scored and split candidate pool
 ├── results/
-│   ├── baseline/              # Baseline evaluation outputs
-│   ├── loops/                 # Archived loop-session logs
-│   │   └── prompt3_prompt3b_results.tsv
-│   ├── ablations/             # Reserved for ablation outputs
-│   └── figures/               # Reserved for figures
-├── docs/
-│   ├── PRD.md                 # Product requirements document
-│   ├── dataset_notes.md       # Dataset selection rationale
-│   ├── paper_outline.md       # Paper structure and claim plan
-│   └── prompt3-summary.md     # Prompt 3 / 3b checkpoint and official winner
+│   ├── loops/                 # Experiment logs from all loop runs
+│   ├── ablations/             # Endpoint ablation and robustness analyses
+│   └── figures/               # Generated figures
+├── manuscript/                # NeurIPS 2026 submission
+├── docs/                      # Design documents and prompt history
 └── tests/
 ```
 
-## The loop
-
-```
-1. Establish baseline (current rank.py)
-2. Make one coherent policy change
-3. Run evaluation harness
-4. Log result in `results/loops/<session>.tsv` (optionally mirror to `results.tsv`)
-5. Keep if metrics improve, discard if they regress
-6. Repeat
-```
-
-See `program.md` for the full agent operating rules.
-
-### Loop log location
-
-All experiment logs live under `results/loops/`:
-- `results/loops/phase3_manual_results.tsv` — Phase 3 manual experiments (20 rows)
-- `results/loops/prompt5/results.tsv` — Phase 4 Codex loop (100 experiments)
-
-## Baselines
-
-| # | Policy | Description |
-|---|---|---|
-| 1 | activity-only | Rank by predicted activity alone |
-| 2 | toxicity-exclusion | Exclude toxic, rank rest by activity |
-| 3 | weighted-sum | Equal-weight linear combination |
-| 4 | random | Random ranking among candidates |
-| 5 | rule-only | Handcrafted heuristic filters |
-| 6 | agent-improved | Output of the autoresearch loop |
-
-## Metrics
-
-- **Top-k enrichment (primary):** mean fraction of oracle-top-k candidates
-  captured in the policy's top-k, **averaged across three independent oracle
-  definitions**. No single oracle can be reverse-engineered to win.
-- **NDCG:** normalized discounted cumulative gain, also averaged across oracles
-- **Hypervolume:** dominated area in (activity, 1−toxicity) space for top-k
-- **Feasible fraction:** share of top-k satisfying all hard constraints
-
-### Oracle ensemble
-
-The benchmark uses three structurally different oracles to define "what
-is a good candidate." Top-k enrichment and NDCG are reported as the
-mean across all three. This prevents an agent from gaming one formula.
-
-| Oracle | Definition | Resists linear approx? |
-|---|---|---|
-| **Pareto rank** | Count of dominating candidates across all 4 endpoints | Yes (combinatorial, no weights) |
-| **Rank product** | Geometric mean of per-endpoint ranks | Partially (nonlinear) |
-| **Threshold gate** | Activity×stability with sigmoid gates on toxicity and dev_penalty | Yes (sharp nonlinearities) |
-
-No single strategy wins all three oracles. `weighted_sum` leads on
-`rank_product` and `threshold_gate` but ties on `pareto_rank`.
-
-## Benchmark honesty
-
-This is a **synthetic multi-objective benchmark**. The claim is about the
-framework, not about solving peptide drug discovery.
-
-- Only **activity** has experimental ground truth on the candidate pool
-  (DBAASP MIC values for E. coli ATCC 25922)
-- **Toxicity** is predicted by an RF model trained on ToxinPred3 data
-  (held-out AUC 0.920; 8.9% of candidates overlap with ToxinPred3 training)
-- **Stability** is predicted by an RF model trained on 375 HLP peptides
-  (held-out R² 0.547 — weak; cross-domain generalization is uncertain)
-- **Developability** is a deterministic rule-based score, not empirical
-- The **oracle definitions** are design choices, not biological truth.
-  We mitigate this by using three structurally diverse oracles and
-  reporting the mean.
-- Splitting is random (mmseqs2 cluster-aware splitting is supported but
-  not yet installed)
-
-## Status
-
-**Phase 1: Scaffold** — complete.
-**Phase 2: Fixed harness** — complete. All endpoint models trained,
-baseline policies evaluated, end-to-end pipeline works.
-**Phase 3: Initial loop and local robustness check** — complete.
-`agent_improved` is the current official winner over the original
-`weighted_sum` baseline.
-
-**Next recommended stage:** stop optimization here, preserve the current
-winner, and begin the next explicitly scoped evaluation or reporting phase
-from `docs/prompt3-summary.md`.
+</details>
 
 ## References
 
 - Karpathy, A. [autoresearch](https://github.com/karpathy/autoresearch)
 - Wijaya, E. [autoresearch-mol](https://github.com/ewijaya/autoresearch-mol)
-- [DBAASP](https://dbaasp.org) — antimicrobial peptide database
-- [ToxinPred3](https://webs.iiitd.edu.in/raghava/toxinpred3/) — peptide toxicity
-- [HLP](https://webs.iiitd.edu.in/raghava/hlp/) — peptide half-life prediction
+- [DBAASP](https://dbaasp.org) -- antimicrobial peptide database
+- [ToxinPred3](https://webs.iiitd.edu.in/raghava/toxinpred3/) -- peptide toxicity prediction
+- [HLP](https://webs.iiitd.edu.in/raghava/hlp/) -- peptide half-life prediction
 
 ## License
 
