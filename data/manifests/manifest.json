@@ -1,6 +1,6 @@
 {
   "total_candidates": 3554,
-  "split_method": "random",
+  "split_method": "mmseqs2",
   "activity_source": "DBAASP_v4_Ecoli_ATCC_25922",
   "toxicity_source": "ToxinPred3_RF",
   "stability_source": "HLP_RF",
@@ -27,8 +27,8 @@
       "max": 0.9902328861479692
     },
     "stability": {
-      "mean": 0.20544203503555233,
-      "std": 0.10784304648433764,
+      "mean": 0.2054420350355522,
+      "std": 0.10784304648433767,
       "min": 0.0,
       "max": 1.0
     },
