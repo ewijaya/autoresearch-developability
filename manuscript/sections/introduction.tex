@@ -14,7 +14,7 @@ The autoresearch framework \citep{karpathy2026autoresearch} demonstrated that an
 Our companion paper \citep{wijaya2026autonomousagentdiscoversmolecular} applied this paradigm to molecular transformer architecture search across SMILES, protein, and NLP domains, running 3{,}106 experiments and finding that the value of architecture search is domain-dependent.
 We adapt the same paradigm to a different problem: instead of optimizing a single metric (val\_bpb) by modifying a neural architecture, we optimize a multi-objective ranking policy for peptide candidate triage.
 
-Concretely, we construct a public benchmark from DBAASP \citep{pirtskhalava2021dbaasp} (antimicrobial activity), ToxinPred3 \citep{rathore2024toxinpred3} (toxicity), HLP \citep{sharma2014hlp} (stability), and rule-based developability proxies.
+We construct a public benchmark from DBAASP \citep{pirtskhalava2021dbaasp} (antimicrobial activity), ToxinPred3 \citep{rathore2024toxinpred3} (toxicity), HLP \citep{sharma2014hlp} (stability), and rule-based developability proxies.
 The evaluation harness uses a three-oracle ensemble (Pareto rank, rank product, and threshold-gated scoring) to prevent the agent from gaming any single metric definition.
 A Codex agent (GPT-5.4) runs 100 experiments, iteratively editing the ranking policy.
 
