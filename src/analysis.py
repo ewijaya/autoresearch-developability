@@ -599,9 +599,11 @@ def figure2_loop_trajectory():
     # Combined score: topk is primary, ndcg breaks ties.
     # This mirrors the keep/discard logic in session_tools.py exactly:
     #   keep if topk > best_topk, OR (topk == best_topk AND ndcg > best_ndcg)
-    # By encoding as topk + ndcg * 0.001 every keep becomes a unique step.
+    # Weight of 0.1 makes NDCG sub-steps visible between TopK plateaus:
+    # TopK steps are ~0.017 apart; NDCG diffs ~0.01 * 0.1 = 0.001 per sub-step,
+    # giving ~6 visible sub-steps per TopK plateau without overlapping the next.
     results["combined_score"] = (results["topk_enrichment"]
-                                 + results["ndcg"] * 0.001)
+                                 + results["ndcg"] * 0.1)
 
     # Running best as step function (like autoresearch-mol style)
     running_best = results["combined_score"].cummax()
