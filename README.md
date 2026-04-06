@@ -27,7 +27,7 @@ The system has three parts:
 
 The AI-improved policy captures **65% of the best candidates** in its top-20 shortlist, compared to:
 
-- **44%** for the standard multi-objective optimization method (NSGA-II)
+- **44%** for the standard multi-objective optimization method (NSGA-II, Non-dominated Sorting Genetic Algorithm)
 - **61%** for the best result from 1,000 random weight combinations
 - **61%** for equal-weight scoring (the naive baseline)
 - **4%** for random selection
