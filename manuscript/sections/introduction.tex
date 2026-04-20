@@ -3,11 +3,11 @@
 
 Peptide drug candidates must survive a portfolio of constraints before entering preclinical development: high activity against the biological target, low toxicity, adequate metabolic stability, and acceptable manufacturability \citep{yan2022review}.
 A peptide with potent antimicrobial activity but high predicted toxicity wastes downstream validation resources.
-Most computational approaches to peptide discovery optimize a single endpoint at a time \citep{veltri2018ampscanner}, leaving the multi-objective trade-off to manual post-hoc filtering.
-Because endpoints often conflict (highly active peptides tend toward membrane-disrupting mechanisms that correlate with toxicity), single-endpoint optimization produces candidates that fail downstream.
+Most computational approaches to peptide discovery optimize a single endpoint at a time \citep{veltri2018ampscanner,rathore2024toxinpred3,sharma2014hlp}, leaving the multi-objective trade-off to manual post-hoc filtering.
+Because endpoints often conflict (highly active peptides tend toward membrane-disrupting mechanisms that correlate with toxicity \citep{matsuzaki2009control}), single-endpoint optimization produces candidates that fail downstream.
 
 Multi-objective optimization (MOO) methods such as NSGA-II \citep{deb2002nsga2} address this by seeking Pareto-optimal solutions across competing objectives.
-However, classical MOO methods optimize for Pareto spread (diversity across the frontier) rather than top-$k$ concentration (the best 20 candidates for wet-lab validation).
+However, classical MOO methods optimize for Pareto spread (diversity across the frontier) rather than top-$k$ concentration (the best 20 candidates for wet-lab validation) \citep{emmerich2018tutorial}.
 In early-stage triage, where the objective is to prioritize a small number of candidates for expensive downstream assays, the desired output is a ranked shortlist, not a diverse Pareto front.
 
 The autoresearch framework \citep{karpathy2026autoresearch} demonstrated that an LLM agent can iteratively improve a system through a tight loop: read the current state, make one code modification, evaluate against a fixed harness, keep the change if it improves, otherwise revert.
@@ -18,7 +18,7 @@ We construct a public benchmark from DBAASP \citep{pirtskhalava2021dbaasp} (anti
 The evaluation harness uses a three-oracle ensemble (Pareto rank, rank product, and threshold-gated scoring) to prevent the agent from gaming any single metric definition.
 A Codex agent (GPT-5.4) runs 100 experiments, iteratively editing the ranking policy.
 
-The agent progresses from simple weight tuning to two-stage reranking to oracle consensus voting to learned MLP and LambdaMART \citep{ke2017lightgbm} ensembles.
+The agent progresses from simple weight tuning to two-stage reranking to oracle consensus voting to learned MLP and LambdaMART \citep{burges2010ranknet,ke2017lightgbm} ensembles.
 The final policy achieves 0.650 top-$k$ enrichment (bootstrap 95\% CI [0.533, 0.767]) and 0.982 NDCG, outperforming NSGA-II (0.444) and best-of-1{,}000 random weight search (0.611).
 
 This paper makes four contributions:

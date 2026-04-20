@@ -11,11 +11,11 @@ The agent independently discovered oracle consensus voting, prioritizing candida
 \textbf{Agent search vs.\ random search.}
 The agent outperforms best-of-1{,}000 random weight search (0.650 vs.\ 0.611 top-$k$ enrichment), indicating that directed policy search adds value beyond blind exploration.
 The agent escapes the linear scalarization policy class entirely: consensus voting and learned reranking are structural innovations that no amount of random Dirichlet weight sampling can discover.
-This parallels findings from our companion paper \citep{wijaya2026autonomousagentdiscoversmolecular}, where the full agent outperformed random NAS on SMILES architecture search.
+This parallels findings from our companion paper \citep{wijaya2026autonomousagentdiscoversmolecular}, where the full agent achieved an 81\% improvement over random search on natural-language architecture tasks.
 
 \textbf{Agent search vs.\ NSGA-II.}
 NSGA-II \citep{deb2002nsga2} achieves the highest hypervolume (0.584) but the lowest top-$k$ enrichment among multi-objective strategies (0.444), reflecting a fundamental mismatch between its objective (Pareto spread) and the triage task (top-$k$ concentration).
-NSGA-II is designed to maintain a diverse set of non-dominated solutions, not to identify a tight cluster of the best candidates.
+NSGA-II is designed to maintain a diverse set of non-dominated solutions, not to identify a tight cluster of the best candidates \citep{emmerich2018tutorial}.
 For candidate triage where the budget permits validating ${\sim}$20 peptides, scalarization-based approaches that concentrate selections are better suited.
 
 \textbf{Limitations.}
