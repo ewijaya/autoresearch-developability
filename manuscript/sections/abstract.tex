@@ -2,7 +2,7 @@
 Peptide drug programs live or die on triage: picking the handful of candidates worth expensive wet-lab validation from thousands of in silico hits.
 A candidate with strong antimicrobial activity but high predicted toxicity, poor stability, or no manufacturable route wastes the next six months of assay budget.
 Most computational pipelines still rank on a single endpoint, or hand-tune scalarizing weights in a spreadsheet, because classical multi-objective optimizers return a Pareto front rather than the short ranked list that medicinal chemists actually need.
-We asked whether an AI coding agent, given an evaluation harness and a candidate pool, could learn a better ranking policy than the weighted-sum score a human team would write by hand.
+We asked whether an automated policy-search agent, given an evaluation harness and a candidate pool, could learn a better ranking policy than the weighted-sum score a human team would write by hand.
 Across a public benchmark of 3{,}554 antimicrobial peptides scored on activity, toxicity, stability, and manufacturability, the agent-derived policy captures 65\% of the best candidates in its top-20 shortlist, compared to 44\% for NSGA-II and 61\% for equal-weight scalarization.
 We report on a public antimicrobial benchmark, not a clinical claim.
 The code, oracles, and ranking policy are released as a drop-in triage layer: swap the candidate pool with your internal peptide library and the in-house assays you already trust.

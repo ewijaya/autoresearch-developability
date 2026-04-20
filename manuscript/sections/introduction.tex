@@ -16,7 +16,7 @@ Nobody needs a diverse frontier of 200 compromise peptides; they need the 20 can
 In practice, most teams fall back on hand-tuned weighted-sum scoring in a spreadsheet, because it at least returns a ranked list.
 The weights are set by intuition, rarely revisited, and almost never audited against held-out data.
 
-We asked whether an LLM coding agent, given a frozen evaluation harness and a scored candidate pool, can learn a better ranking policy than the weighted sum a human team would write by hand.
+We asked whether an automated policy-search agent, given a frozen evaluation harness and a scored candidate pool, can learn a better ranking policy than the weighted sum a human team would write by hand.
 The agent (Codex, GPT-5.4) reads the current ranking policy, edits the code, runs the harness, and keeps the change only if the score improves; otherwise it reverts.
 Data, oracles, and metrics are read-only, so the agent can only improve by writing better ranking code, not by reshaping the test.
 The loop design is borrowed from \citet{karpathy2026autoresearch} and applied in parallel to molecular model architectures in a companion study \citep{wijaya2026autonomousagentdiscoversmolecular}; here it is directed for the first time at peptide candidate triage.
