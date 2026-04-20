@@ -749,6 +749,164 @@ def figure3_pareto_front(split: str = "val", k: int = 20):
     logger.info(f"Saved Figure 3 to {out_path}")
 
 
+def figure3b_stab_dev(split: str = "val", k: int = 20, dev_max: float = 3.5):
+    """Figure 3b: Stability vs developability projection of top-k selections.
+
+    Same three strategies as fig3 (activity only / weighted sum / agent improved)
+    but plotted in the two endpoints fig3 drops. Developability penalty is
+    mapped to a 0-1 developability score via 1 - dev_penalty/dev_max so that
+    up-right = better on both axes (same visual convention as fig3).
+    """
+    plt, sns = _ensure_matplotlib()
+
+    csv_path = PROCESSED_DIR / f"{split}.csv"
+    df = pd.read_csv(csv_path)
+
+    fig, axes = plt.subplots(1, 3, figsize=(16, 5), sharey=True)
+    strategies_to_show = ["activity_only", "weighted_sum", "agent_improved"]
+    titles = ["Activity Only", "Weighted Sum (baseline)", "Agent Improved"]
+    colors = ["#e74c3c", "#3498db", "#2ecc71"]
+
+    dev_score = 1.0 - df["dev_penalty"].clip(lower=0, upper=dev_max) / dev_max
+
+    for ax, strat, title, color in zip(axes, strategies_to_show, titles, colors):
+        ranked = rank_candidates(df, strategy=strat)
+        topk_set = set(ranked[:k])
+
+        in_topk = df.index.isin(topk_set)
+        not_topk = ~in_topk
+
+        ax.scatter(df.loc[not_topk, "stability"], dev_score[not_topk],
+                   c="#bdc3c7", s=8, alpha=0.3, label="Other candidates")
+        ax.scatter(df.loc[in_topk, "stability"], dev_score[in_topk],
+                   c=color, s=40, alpha=0.8, edgecolors="white",
+                   linewidth=0.5, label=f"Top-{k}")
+
+        ax.set_xlabel("Stability")
+        ax.set_title(title)
+        ax.legend(loc="lower right", fontsize=9)
+
+    axes[0].set_ylabel(f"Developability score (1 - penalty / {dev_max:g})")
+    fig.suptitle(
+        f"Stability vs Developability ({split} split): the axes fig3 drops",
+        y=1.02,
+    )
+    fig.tight_layout()
+
+    FIGURES_DIR.mkdir(parents=True, exist_ok=True)
+    out_path = FIGURES_DIR / "fig3b_stab_dev.pdf"
+    fig.savefig(out_path, dpi=300, bbox_inches="tight")
+    fig.savefig(out_path.with_suffix(".png"), dpi=150, bbox_inches="tight")
+    plt.close(fig)
+    logger.info(f"Saved Figure 3b to {out_path}")
+
+
+def figure3c_cross_split_paired():
+    """Figure 3c: paired per-split comparison, Weighted Sum vs Agent Improved.
+
+    Left panel: slope graph — one line per split seed, from weighted_sum score
+    to agent_improved score. Green if Agent wins, red if Agent loses.
+    Right panel: per-split delta (Agent - Weighted Sum) as a strip + box.
+
+    Shows the cross-split story the single-split scatter cannot: paired
+    comparison on the benchmark's primary metric (mean top-k enrichment
+    across three oracles), no projection, no axis choice.
+    """
+    plt, sns = _ensure_matplotlib()
+
+    raw_path = ABLATION_DIR / "multi_split_raw.csv"
+    if not raw_path.exists():
+        raise FileNotFoundError(
+            f"Multi-split raw not found: {raw_path}. "
+            "Run: python -m src.analysis --multi-split"
+        )
+    df = pd.read_csv(raw_path)
+
+    agent = (df[df.strategy == "agent_improved"]
+             .set_index("split_seed")["topk_enrichment"])
+    wsum = (df[df.strategy == "weighted_sum"]
+            .set_index("split_seed")["topk_enrichment"])
+    joined = pd.DataFrame({"agent": agent, "weighted": wsum}).dropna().sort_index()
+    deltas = joined["agent"] - joined["weighted"]
+    n_wins = int((deltas > 0).sum())
+    n_losses = int((deltas < 0).sum())
+    n_total = len(deltas)
+    mean_delta = float(deltas.mean())
+
+    try:
+        from scipy.stats import wilcoxon
+        w = wilcoxon(deltas.values, alternative="greater")
+        p_wilcoxon = float(w.pvalue)
+    except Exception:
+        p_wilcoxon = float("nan")
+
+    fig, (ax_left, ax_right) = plt.subplots(
+        1, 2, figsize=(12, 5), gridspec_kw={"width_ratios": [1.4, 1]}
+    )
+
+    x_positions = [0.0, 1.0]
+    for seed, row in joined.iterrows():
+        delta = row["agent"] - row["weighted"]
+        color = "#2ecc71" if delta > 0 else "#e74c3c"
+        ax_left.plot(x_positions, [row["weighted"], row["agent"]],
+                     marker="o", color=color, linewidth=1.6,
+                     markersize=6, alpha=0.75)
+
+    ax_left.set_xticks(x_positions)
+    ax_left.set_xticklabels(["Weighted Sum (baseline)", "Agent Improved"])
+    ax_left.set_ylabel("Top-k enrichment (mean across 3 oracles)")
+    ax_left.set_title(
+        f"Paired per-split comparison (n = {n_total} random splits)"
+    )
+    ax_left.grid(axis="y", alpha=0.3)
+    ax_left.set_xlim(-0.3, 1.3)
+
+    ax_left.text(
+        0.02, 0.97,
+        f"Agent wins: {n_wins}/{n_total}   losses: {n_losses}/{n_total}\n"
+        f"mean $\\Delta$ = {mean_delta:+.3f}\n"
+        f"Wilcoxon signed-rank $p$ = {p_wilcoxon:.3f}",
+        transform=ax_left.transAxes, va="top", ha="left",
+        fontsize=10,
+        bbox=dict(boxstyle="round,pad=0.4", facecolor="white",
+                  edgecolor="#bdc3c7", alpha=0.95),
+    )
+
+    colors = ["#2ecc71" if d > 0 else "#e74c3c" for d in deltas.values]
+    ax_right.axvline(0, color="#7f8c8d", linewidth=1, linestyle="--", zorder=1)
+    ax_right.scatter(deltas.values, range(len(deltas)), c=colors, s=70,
+                     edgecolors="white", linewidth=0.8, zorder=3)
+    for i, (seed, d) in enumerate(zip(deltas.index, deltas.values)):
+        ax_right.text(d, i, f"  seed {seed}", va="center", ha="left" if d >= 0 else "right",
+                      fontsize=8, color="#34495e")
+
+    ax_right.set_yticks([])
+    ax_right.set_xlabel("Agent - Weighted Sum (top-k enrichment)")
+    ax_right.set_title("Per-split delta")
+    ax_right.grid(axis="x", alpha=0.3)
+    pad = 0.03
+    xmin = min(deltas.min() - pad, -pad)
+    xmax = max(deltas.max() + pad, pad)
+    ax_right.set_xlim(xmin - 0.04, xmax + 0.04)
+
+    fig.suptitle(
+        "Cross-split robustness: Agent Improved vs Weighted Sum",
+        y=1.02, fontsize=13,
+    )
+    fig.tight_layout()
+
+    FIGURES_DIR.mkdir(parents=True, exist_ok=True)
+    out_path = FIGURES_DIR / "fig3c_cross_split_paired.pdf"
+    fig.savefig(out_path, dpi=300, bbox_inches="tight")
+    fig.savefig(out_path.with_suffix(".png"), dpi=150, bbox_inches="tight")
+    plt.close(fig)
+    logger.info(
+        f"Saved Figure 3c to {out_path} "
+        f"(wins {n_wins}/{n_total}, mean delta {mean_delta:+.4f}, "
+        f"Wilcoxon p = {p_wilcoxon:.4f})"
+    )
+
+
 def figure4_ablation_heatmap(split: str = "val"):
     """Figure 4: Endpoint ablation heatmap.
 
@@ -915,6 +1073,8 @@ def run_all(split: str = "val", k: int = 20, n_bootstrap: int = 1000):
     figure1_baseline_comparison(split=split, k=k)
     figure2_loop_trajectory()
     figure3_pareto_front(split=split, k=k)
+    figure3b_stab_dev(split=split, k=k)
+    figure3c_cross_split_paired()
     figure4_ablation_heatmap(split=split)
     figure5_weight_sensitivity()
     figure6_multi_split_boxplot()
@@ -970,6 +1130,8 @@ def main():
         figure1_baseline_comparison(split=args.split, k=args.k)
         figure2_loop_trajectory()
         figure3_pareto_front(split=args.split, k=args.k)
+        figure3b_stab_dev(split=args.split, k=args.k)
+        figure3c_cross_split_paired()
         figure4_ablation_heatmap(split=args.split)
         figure5_weight_sensitivity()
         figure6_multi_split_boxplot()
