@@ -11,7 +11,7 @@ Bootstrap 95\% confidence intervals are computed over 1{,}000 resamples.
 
 \begin{table}[t]
 \centering
-\caption{Strategy comparison on the validation split ($k = 20$, $n = 539$ candidates). All metrics are means across three oracle definitions. 95\% CIs from 1{,}000 bootstrap resamples. Best point estimate in \textbf{bold}.}
+\caption{Strategy comparison on the validation split ($k = 20$, $n = 539$ candidates). All metrics are means across three oracle definitions. 95\% CIs from 1{,}000 bootstrap resamples. Best point estimate in \textbf{bold}. $^{\dagger}$Random weight search's point estimate (0.611) and CI nearly coincide with weighted sum (0.609, [0.483, 0.733]) because both explore the same linear-scalarization policy class; the near-equivalence is expected, not a data-handling artifact.}
 \label{tab:strategies}
 \small
 \begin{tabular}{@{}lcccc@{}}
@@ -24,7 +24,7 @@ Toxicity exclusion & 0.238 \scriptsize{[0.133, 0.367]} & 0.807 \scriptsize{[0.74
 Rule only & 0.396 \scriptsize{[0.250, 0.567]} & 0.865 \scriptsize{[0.804, 0.928]} & 0.431 & 0.450 \\
 NSGA-II & 0.444 \scriptsize{[0.267, 0.617]} & 0.821 \scriptsize{[0.751, 0.896]} & \textbf{0.584} & 0.523 \\
 Weighted sum & 0.609 \scriptsize{[0.483, 0.733]} & 0.976 \scriptsize{[0.955, 0.990]} & 0.554 & 0.679 \\
-Random wt.\ search & 0.611 \scriptsize{[0.483, 0.734]} & 0.954 \scriptsize{[0.903, 0.982]} & 0.547 & 0.671 \\
+Random wt.\ search$^{\dagger}$ & 0.611 \scriptsize{[0.483, 0.734]} & 0.954 \scriptsize{[0.903, 0.982]} & 0.547 & 0.671 \\
 \textbf{Agent improved} & \textbf{0.650} \scriptsize{[0.533, 0.767]} & \textbf{0.982} \scriptsize{[0.966, 0.992]} & 0.558 & 0.707 \\
 \bottomrule
 \end{tabular}
@@ -43,7 +43,7 @@ No other strategy leads on all three metrics simultaneously.
 \textbf{Agent improved vs.\ NSGA-II.}
 The strongest comparison is against NSGA-II, the standard multi-objective optimization baseline: 0.650 vs.\ 0.444 top-$k$ enrichment, with substantially separated 95\% CIs ([0.533, 0.767] vs.\ [0.267, 0.617]).
 NSGA-II achieves the highest hypervolume (0.584), reflecting its design goal of spreading solutions across the Pareto front.
-However, for candidate prioritization where the objective is to identify the top 20 candidates rather than a diverse frontier, scalarization-based policies are better suited.
+However, for candidate prioritization where the objective is to identify the top-20 candidates rather than a diverse frontier, scalarization-based policies are better suited.
 
 \textbf{Agent improved vs.\ random weight search.}
 The agent outperforms best-of-1{,}000 random weight search (0.650 vs.\ 0.611 top-$k$ enrichment), demonstrating that directed policy search adds value beyond blind exploration of the same policy class.
@@ -69,13 +69,13 @@ The harmonic mean of top-$k$ enrichment and NDCG on the loop's split progresses 
 \begin{figure}[t]
 \centering
 \includegraphics[width=\linewidth]{figures/fig2_loop_trajectory.pdf}
-\caption{Autoresearch loop trajectory over 100 experiments. Each point is one experiment; green triangles indicate kept improvements, gray circles indicate discarded regressions. The staircase line tracks the running best. The agent progresses through three structural phases: weight tuning (experiments 1--10), two-stage reranking (11--31), and oracle consensus voting with learned reranking (32--94, with no further improvements through experiment 100).}
+\caption{Autoresearch loop trajectory over 100 experiments. Y-axis: harmonic mean of top-$k$ enrichment and NDCG on the loop's held-out split ($n = 533$). Each point is one experiment; green triangles indicate kept improvements, gray circles indicate discarded regressions. The staircase line tracks the running best. The agent progresses through three structural phases: weight tuning (experiments 1--10), two-stage reranking (11--31), and oracle consensus voting with learned reranking (32--94, with no further improvements through experiment 100).}
 \label{fig:loop_trajectory}
 \end{figure}
 
 The 12 kept experiments reveal a structural progression across three phases:
 
-\textbf{Phase 1: Weight tuning} (experiments 1--10).
+\textbf{Phase 1: Weight tuning} (experiments 1--10, one improvement kept).
 The agent adjusts scalarization weights, increasing activity weight from 0.45 to 0.50 and toxicity weight from 0.40 to 0.50.
 Top-$k$ enrichment improves from 0.683 to 0.700.
 
@@ -99,7 +99,7 @@ Figure~\ref{fig:pareto_front} visualizes the multi-objective trade-off by plotti
 \begin{figure}[t]
 \centering
 \includegraphics[width=\linewidth]{figures/fig3_pareto_front.pdf}
-\caption{Pareto front visualization. Each panel shows one oracle's top-20 selected by three strategies in the (activity, $1 - \text{toxicity}$) plane. Activity only (left) clusters in the high-activity/low-safety corner. The agent-improved policy (right) covers a broader region of the Pareto front while maintaining competitive activity.}
+\caption{Pareto front visualization across the three oracles (left panel: Pareto rank; middle: rank product; right: threshold gate). Each panel overlays the top-20 selected by three strategies (activity only, weighted sum, agent improved) in the (activity, $1 - \text{toxicity}$) plane. Activity-only selection clusters in the high-activity/low-safety corner. The agent-improved policy covers a broader region of the Pareto front while maintaining competitive activity.}
 \label{fig:pareto_front}
 \end{figure}
 
@@ -144,7 +144,7 @@ To quantify the contribution of each endpoint, we ablate by setting each endpoin
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.85\linewidth]{figures/fig4_ablation_heatmap.pdf}
-\caption{Endpoint ablation heatmap. Each cell shows the change in top-$k$ enrichment when that endpoint is set to its pool mean. Dropping stability causes the largest degradation for rule only ($-0.200$), while the agent-improved policy is more robust to individual endpoint ablation.}
+\caption{Endpoint ablation heatmap. Each cell shows the change in top-$k$ enrichment ($\Delta$TopK) when that endpoint is set to its pool mean; the color scale runs from red (negative $\Delta$, ablation hurts) to blue (positive $\Delta$, ablation helps), spanning $[-0.200, +0.183]$. Dropping stability causes the largest degradation for rule only ($-0.200$), while the agent-improved policy is more robust to individual endpoint ablation.}
 \label{fig:ablation_heatmap}
 \end{figure}
 
@@ -156,11 +156,12 @@ The agent-improved policy shows moderate sensitivity across all four endpoints w
 \label{sec:cross_split}
 
 To assess robustness beyond a single validation split, we evaluate all strategies across 10 independent random splits (Figure~\ref{fig:multi_split}; full table in Appendix~\ref{sec:supp_multi_split}).
+The gains also hold across the three mathematically distinct oracles (Pareto rank, rank product, threshold gate): the agent-improved policy leads on Pareto rank and threshold gate, and trails weighted sum only on rank product (Table~\ref{tab:per_oracle}), consistent with the three-oracle design preventing reverse-engineering of any single formula.
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.85\linewidth]{figures/fig6_multi_split_boxplot.pdf}
-\caption{Cross-split robustness: top-$k$ enrichment across 10 random train/val/test splits. Agent improved ($0.650 \pm 0.034$) consistently outperforms weighted sum ($0.585 \pm 0.050$) with non-overlapping interquartile ranges.}
+\caption{Cross-split robustness: boxplot of top-$k$ enrichment across all eight strategies $\times$ 10 random train/val/test splits. Agent improved ($0.650 \pm 0.034$) shows a higher mean and tighter variance than weighted sum ($0.585 \pm 0.050$), with non-overlapping interquartile ranges.}
 \label{fig:multi_split}
 \end{figure}
 

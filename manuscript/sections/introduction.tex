@@ -18,18 +18,17 @@ The weights are set by intuition, rarely revisited, and almost never audited aga
 
 We asked whether an automated policy-search agent, given a frozen evaluation harness and a scored candidate pool, can learn a better ranking policy than the weighted sum a human team would write by hand.
 The agent (Codex, GPT-5.4) reads the current ranking policy, edits the code, runs the harness, and keeps the change only if the score improves; otherwise it reverts.
-Data, oracles, and metrics are read-only, so the agent can only improve by writing better ranking code, not by reshaping the test.
-The loop design is borrowed from \citet{karpathy2026autoresearch} and applied in parallel to molecular model architectures in a companion study \citep{wijaya2026autonomousagentdiscoversmolecular}; here it is directed for the first time at peptide candidate prioritization.
+Data, oracles, and metrics are read-only, so the agent can only improve by writing a better ranking policy, not by reshaping the test.
+The loop design is borrowed from \citet{karpathy2026autoresearch}; here it is directed for the first time at peptide candidate prioritization (see Section~\ref{sec:related_work} for its application in a companion study on molecular architectures).
 
 The benchmark is public and modest in scope.
 We assemble 3{,}554 antimicrobial peptides from DBAASP \citep{pirtskhalava2021dbaasp} with measured activity against \emph{E.~coli}, predicted toxicity from ToxinPred3 \citep{rathore2024toxinpred3}, predicted half-life from HLP \citep{sharma2014hlp}, and a rule-based developability score.
-The agent ran 100 experiments over roughly one laptop-day; 12 modifications passed the keep/discard gate.
-Its final policy combines an oracle consensus voting stage with a learned reranker \citep{burges2010ranknet,ke2017lightgbm}, but the practical point for a biotech reader is that this structure was discovered automatically rather than prescribed by the authors.
+The agent ran 100 experiments over roughly one laptop-day; 11 modifications passed the keep/discard gate (yielding 12 kept policies when counting the initial baseline).
+Its final policy combines an oracle consensus voting stage with a learned reranker \citep{burges2010ranknet,ke2017lightgbm}; this structure was discovered automatically rather than prescribed by the authors.
 
 Success is measured by top-20 enrichment (the fraction of the truly best candidates that land in the agent's top-20 shortlist), averaged across three independent oracle definitions, with NDCG as a secondary metric and bootstrap confidence intervals over 10 random data splits.
 The agent-derived policy captures 65\% of the best candidates in its top-20, compared to 44\% for NSGA-II and 61\% for an equal-weight scalarization baseline.
 The margin over NSGA-II is large and its bootstrap confidence intervals are cleanly separated; the margin over weighted-sum is smaller, and we are honest about it: single-split confidence intervals overlap, while the cross-split mean separates consistently ($0.650 \pm 0.034$ vs.\ $0.585 \pm 0.050$ across 10 splits).
-All claims are on a public AMP benchmark; we are not making a clinical claim.
 
 This paper contributes the following, framed in terms of what a peptide-program reader gets:
 \begin{enumerate}[nosep]
@@ -42,6 +41,6 @@ A set of 3{,}554 peptides scored across activity, toxicity, stability, and devel
 \item \textbf{Evidence that automated policy search beats standard baselines on candidate prioritization.}
 On this benchmark, the agent-derived policy outperforms NSGA-II and equal-weight scalarization on top-20 enrichment, with cross-split consistency across 10 random splits.
 
-\item \textbf{The agent earned its keep beyond prompt-wrapped random search.}
+\item \textbf{Evidence of policy-structure discovery beyond random weight search.}
 The final policy contains structural elements (oracle consensus voting plus a learned reranker) that neither the authors pre-specified nor a 1{,}000-sample random weight search could reach (0.650 vs.\ 0.611 top-20 enrichment), indicating that the loop is discovering policy structure, not just retuning weights.
 \end{enumerate}

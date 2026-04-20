@@ -6,7 +6,7 @@ We formalize the ranking problem, describe the public benchmark and evaluation h
 \subsection{Problem Formulation}
 \label{sec:problem}
 
-Given a pool of $N$ peptide candidates, each characterized by estimated scores for $K$ endpoints (activity, toxicity, stability, developability), the goal is to learn a ranking policy $\pi$ that maps score vectors to a candidate ordering maximizing discovery utility under all constraints simultaneously.
+Given a pool of $N$ peptide candidates, each characterized by estimated scores for four endpoints (activity, toxicity, stability, developability), the goal is to learn a ranking policy $\pi$ that maps score vectors to a candidate ordering maximizing discovery utility under all constraints simultaneously.
 Formally, let $\mathbf{x}_i = (a_i, t_i, s_i, d_i) \in \mathbb{R}^4$ denote the endpoint score vector for candidate $i$.
 A ranking policy $\pi: \mathbb{R}^{N \times 4} \to \mathcal{S}_N$ produces a permutation of candidates.
 The policy is evaluated by how well its top-$k$ selections overlap with ground-truth high-quality candidates defined by independent oracle functions (Section~\ref{sec:evaluation_harness}).
@@ -31,7 +31,7 @@ We assemble a benchmark from four public data sources spanning complementary dev
 Activity & DBAASP v3 & 3{,}554 & Measured MIC & --- & $-\log_{10}$ potency \\
 Toxicity & ToxinPred3 & 8{,}323 train & RF classifier & AUC 0.920 & 8.9\% overlap flagged \\
 Stability & HLP & 1{,}353 train & RF regressor & $R^2$ 0.547 & Weak; acknowledged \\
-Developability & Rule-based & --- & 7 penalties & Deterministic & Length, charge, hydrophobicity \\
+Developability & Rule-based & --- & 6 penalties & Deterministic & Length, charge, hydrophobicity \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -51,7 +51,7 @@ A random forest regressor is trained on peptide half-life data from HLP \citep{s
 Held-out $R^2$ is 0.547, substantially weaker than the toxicity model; this limitation propagates to any ranking policy that relies on stability scores.
 
 \textbf{Developability.}
-A deterministic rule-based proxy computes a penalty score from seven sequence-level rules \citep{fjell2012peptidedev}: length outside 8--40 residues ($+1$), consecutive hydrophobic stretches ($+0.5$ per excess), consecutive prolines ($+0.5$), high net charge ($+1$), high mean hydrophobicity ($+1$), and excess cysteines ($+1$).
+A deterministic rule-based proxy computes a penalty score from six sequence-level rules \citep{fjell2012peptidedev}: length outside 8--40 residues ($+1$), consecutive hydrophobic stretches ($+0.5$ per excess), consecutive prolines ($+0.5$), high net charge ($+1$), high mean hydrophobicity ($+1$), and excess cysteines ($+1$).
 The total penalty ranges from 0 (ideal) to ${\sim}3.5$ in practice.
 
 \textbf{Candidate pool statistics.}
@@ -92,8 +92,7 @@ Using three oracles with different mathematical structures (Pareto counting, geo
 \subsection{Autoresearch Loop}
 \label{sec:loop}
 
-We adapt the autoresearch framework \citep{karpathy2026autoresearch} from neural architecture search to ranking policy search.
-Our companion paper \citep{wijaya2026autonomousagentdiscoversmolecular} previously applied this paradigm to molecular transformer architecture search across SMILES, protein, and NLP domains (3{,}106 experiments).
+We adapt the autoresearch framework \citep{karpathy2026autoresearch} from neural architecture search to ranking policy search (see Section~\ref{sec:related_work} for the companion paper).
 Here, the editable surface changes from a training script to a ranking policy, and the evaluation changes from a single metric (val\_bpb) to a multi-objective ensemble.
 
 \textbf{Architecture.}

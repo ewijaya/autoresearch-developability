@@ -1,6 +1,8 @@
 \section{Discussion \& Limitations}
 \label{sec:discussion}
 
+The cross-split evidence above establishes that the margin is real; the mechanism behind it is what the next paragraphs examine.
+
 \textbf{What the loop discovered.}
 The agent's 12 kept modifications (11 improvements over the baseline) follow a clear structural trajectory.
 Early experiments adjust scalarization weights, a form of hyperparameter tuning within the initial policy class.
@@ -11,7 +13,7 @@ The agent independently discovered oracle consensus voting, prioritizing candida
 \textbf{Agent search vs.\ random search.}
 The agent outperforms best-of-1{,}000 random weight search (0.650 vs.\ 0.611 top-$k$ enrichment), indicating that directed policy search adds value beyond blind exploration.
 The agent escapes the linear scalarization policy class entirely: consensus voting and learned reranking are structural innovations that no amount of random Dirichlet weight sampling can discover.
-This parallels findings from our companion paper \citep{wijaya2026autonomousagentdiscoversmolecular}, where the full agent achieved an 81\% improvement over random search on natural-language architecture tasks.
+This parallels findings from the companion paper \citep{wijaya2026autonomousagentdiscoversmolecular}.
 
 \textbf{Agent search vs.\ NSGA-II.}
 NSGA-II \citep{deb2002nsga2} achieves the highest hypervolume (0.584) but the lowest top-$k$ enrichment among multi-objective strategies (0.444), reflecting a fundamental mismatch between its objective (Pareto spread) and the prioritization task (top-$k$ concentration).
@@ -24,7 +26,7 @@ We identify seven limitations that scope the claims of this work:
 \begin{enumerate}[nosep]
 \item \emph{Synthetic benchmark.}
 Only activity is ground truth (measured MIC from DBAASP).
-Toxicity and stability are predicted by models with imperfect accuracy (AUC 0.920 and $R^2$ 0.547 respectively), and developability is a deterministic rule-based proxy.
+Toxicity and stability are predicted by models with imperfect accuracy (AUC 0.920 and $R^2$ 0.547 respectively), and developability is a deterministic rule-based proxy \citep{fjell2012peptidedev}.
 The ranking policy optimizes over estimated scores, not biological reality.
 
 \item \emph{Weak stability model.}

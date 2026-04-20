@@ -8,9 +8,9 @@ Our setting differs: the candidate pool is fixed, and the task is ranking (prior
 Scalarization, Pareto, and lexicographic methods for multi-objective ranking have been studied in the broader optimization literature \citep{emmerich2018tutorial}, but their application to peptide candidate prioritization with multiple estimated endpoints is largely unexplored.
 
 \textbf{Peptide property prediction.}
-Computational tools for individual peptide properties are well-established: antimicrobial activity prediction \citep{veltri2018ampscanner}, toxicity prediction \citep{rathore2024toxinpred3}, and stability estimation \citep{sharma2014hlp}.
+Computational tools for individual peptide properties are well-established: antimicrobial activity prediction \citep{veltri2018ampscanner,mooney2012peptideranker}, toxicity prediction \citep{rathore2024toxinpred3}, and stability estimation \citep{sharma2014hlp}.
 Protein language models such as ESM-2 \citep{lin2023esm2} provide general-purpose sequence embeddings that improve downstream predictors.
-However, most tools predict a single endpoint; few address the joint ranking problem across multiple developability criteria.
+However, most tools predict a single endpoint; few address the joint ranking problem across multiple developability endpoints, and multi-endpoint failure modes are what kill leads in practice \citep{yan2022review}.
 Learning-to-rank methods \citep{liu2009learningtorank,burges2010ranknet} offer a principled framework for combining multiple signals into a single ranking, but their application to peptide candidate prioritization is unexplored.
 
 \textbf{Autonomous ML research.}

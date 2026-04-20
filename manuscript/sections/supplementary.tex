@@ -29,7 +29,7 @@ Table~\ref{tab:keeps} lists all 12 kept experiments from the 100-experiment Code
 \toprule
 \textbf{Exp.} & \textbf{TopK} & \textbf{NDCG} & \textbf{H-mean} & \textbf{Description} \\
 \midrule
-1 & 0.683 & 0.972 & 0.802 & Baseline agent\_improved \\
+1 & 0.683 & 0.972 & 0.802 & Baseline policy (initial \texttt{agent\_improved}) \\
 2 & 0.700 & 0.974 & 0.814 & Weight tuning: activity$=$0.50, toxicity$=$0.50, stability$=$0.30 \\
 11 & 0.700 & 0.978 & 0.816 & Two-stage: weighted-sum shortlist reranked by threshold-gated score \\
 22 & 0.700 & 0.978 & 0.816 & Ensemble rerank: threshold-gated + rank-product \\
@@ -52,7 +52,7 @@ Table~\ref{tab:multi_split} provides the full cross-split statistics for all eig
 
 \begin{table}[h]
 \centering
-\caption{Cross-split summary statistics ($n = 10$ random splits). Mean $\pm$ std of top-$k$ enrichment and NDCG.}
+\caption{Cross-split summary statistics across 10 random splits. Mean $\pm$ std of top-$k$ enrichment and NDCG.}
 \label{tab:multi_split}
 \small
 \begin{tabular}{@{}lcccc@{}}
