@@ -160,13 +160,21 @@ To assess robustness beyond a single validation split, we evaluate all strategie
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.85\linewidth]{figures/fig6_multi_split_boxplot.pdf}
-\caption{Cross-split robustness: top-$k$ enrichment across 10 random train/val/test splits. Agent improved ($0.650 \pm 0.034$) consistently outperforms weighted sum ($0.585 \pm 0.050$) with non-overlapping interquartile ranges.}
+\caption{Cross-split robustness: top-$k$ enrichment across 10 random train/val/test splits. Agent improved ($0.650 \pm 0.034$) shows a higher mean and tighter variance than weighted sum ($0.585 \pm 0.050$), with non-overlapping interquartile ranges. See Figure~\ref{fig:cross_split_paired} for the paired per-split comparison.}
 \label{fig:multi_split}
 \end{figure}
 
 The agent-improved policy achieves the highest mean top-$k$ enrichment ($0.650 \pm 0.034$) across all 10 splits, with the lowest standard deviation among the top three strategies.
 Across 10 independent splits, agent improved beats weighted sum on 8 of 10 (mean gain $+0.065$; the two losses are small, $\Delta \leq 0.033$, while the eight wins are substantially larger, mean $\Delta = +0.088$).
 A Wilcoxon signed-rank test on the paired per-split deltas gives $p = 0.004$ (one-sided), which is the appropriate test because it uses the magnitude of the wins, not only their sign.
+Figure~\ref{fig:cross_split_paired} visualizes the paired comparison: eight of ten splits slope upward from weighted sum to agent improved (green), and the two downward slopes (red) are small in magnitude.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{figures/fig3c_cross_split_paired.pdf}
+\caption{Paired per-split comparison, weighted sum vs.\ agent improved, on the benchmark's primary metric (mean top-$k$ enrichment across three oracles; $k = 20$). Left: slope graph with one line per split seed (100--109); green lines indicate agent improved wins ($8/10$), red lines indicate losses ($2/10$). Right: per-split delta $\Delta = \text{agent} - \text{weighted sum}$; the two losses (seeds 100, 102) are small ($\Delta \geq -0.033$), while the eight wins spread to $+0.15$. Wilcoxon signed-rank $p = 0.004$ (one-sided).}
+\label{fig:cross_split_paired}
+\end{figure}
 
 On the primary validation split, the bootstrap 95\% CIs for agent improved ([0.533, 0.767]) and weighted sum ([0.483, 0.733]) overlap; the improvement is not statistically significant at 95\% confidence on a single split.
 The CIs are inherently wide because top-$k$ enrichment at $k = 20$ is a discrete metric with limited resolution.
