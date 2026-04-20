@@ -11,7 +11,7 @@ Single-endpoint winners are often multi-endpoint losers.
 
 The textbook response is multi-objective optimization.
 NSGA-II \citep{deb2002nsga2} and its descendants return a Pareto front: a diverse set of non-dominated compromises spread across the objective space \citep{emmerich2018tutorial}.
-That output shape is a mismatch for the triage decision a program director actually makes.
+That output shape is a mismatch for the shortlisting decision a program director actually makes.
 Nobody needs a diverse frontier of 200 compromise peptides; they need the 20 candidates most likely to survive validation.
 In practice, most teams fall back on hand-tuned weighted-sum scoring in a spreadsheet, because it at least returns a ranked list.
 The weights are set by intuition, rarely revisited, and almost never audited against held-out data.
@@ -19,7 +19,7 @@ The weights are set by intuition, rarely revisited, and almost never audited aga
 We asked whether an automated policy-search agent, given a frozen evaluation harness and a scored candidate pool, can learn a better ranking policy than the weighted sum a human team would write by hand.
 The agent (Codex, GPT-5.4) reads the current ranking policy, edits the code, runs the harness, and keeps the change only if the score improves; otherwise it reverts.
 Data, oracles, and metrics are read-only, so the agent can only improve by writing better ranking code, not by reshaping the test.
-The loop design is borrowed from \citet{karpathy2026autoresearch} and applied in parallel to molecular model architectures in a companion study \citep{wijaya2026autonomousagentdiscoversmolecular}; here it is directed for the first time at peptide candidate triage.
+The loop design is borrowed from \citet{karpathy2026autoresearch} and applied in parallel to molecular model architectures in a companion study \citep{wijaya2026autonomousagentdiscoversmolecular}; here it is directed for the first time at peptide candidate prioritization.
 
 The benchmark is public and modest in scope.
 We assemble 3{,}554 antimicrobial peptides from DBAASP \citep{pirtskhalava2021dbaasp} with measured activity against \emph{E.~coli}, predicted toxicity from ToxinPred3 \citep{rathore2024toxinpred3}, predicted half-life from HLP \citep{sharma2014hlp}, and a rule-based developability score.
@@ -37,9 +37,9 @@ This paper contributes the following, framed in terms of what a peptide-program 
 The released ranking policy, evaluation harness, and loop infrastructure are designed to replace a weighted-scoring spreadsheet; swapping in an internal peptide library and in-house endpoint models requires changing only the data pipeline.
 
 \item \textbf{A public multi-objective AMP benchmark.}
-A set of 3{,}554 peptides scored across activity, toxicity, stability, and developability, evaluated under three mathematically distinct oracle definitions, is released so other groups can benchmark their own triage methods on a common target.
+A set of 3{,}554 peptides scored across activity, toxicity, stability, and developability, evaluated under three mathematically distinct oracle definitions, is released so other groups can benchmark their own candidate prioritization methods on a common target.
 
-\item \textbf{Evidence that automated policy search beats standard baselines on triage.}
+\item \textbf{Evidence that automated policy search beats standard baselines on candidate prioritization.}
 On this benchmark, the agent-derived policy outperforms NSGA-II and equal-weight scalarization on top-20 enrichment, with cross-split consistency across 10 random splits.
 
 \item \textbf{The agent earned its keep beyond prompt-wrapped random search.}

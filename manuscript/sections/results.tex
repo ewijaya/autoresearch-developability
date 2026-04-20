@@ -43,7 +43,7 @@ No other strategy leads on all three metrics simultaneously.
 \textbf{Agent improved vs.\ NSGA-II.}
 The strongest comparison is against NSGA-II, the standard multi-objective optimization baseline: 0.650 vs.\ 0.444 top-$k$ enrichment, with substantially separated 95\% CIs ([0.533, 0.767] vs.\ [0.267, 0.617]).
 NSGA-II achieves the highest hypervolume (0.584), reflecting its design goal of spreading solutions across the Pareto front.
-However, for candidate triage where the objective is to identify the top 20 candidates rather than a diverse frontier, scalarization-based policies are better suited.
+However, for candidate prioritization where the objective is to identify the top 20 candidates rather than a diverse frontier, scalarization-based policies are better suited.
 
 \textbf{Agent improved vs.\ random weight search.}
 The agent outperforms best-of-1{,}000 random weight search (0.650 vs.\ 0.611 top-$k$ enrichment), demonstrating that directed policy search adds value beyond blind exploration of the same policy class.

@@ -5,13 +5,13 @@
 Multi-objective molecular optimization has been explored through evolutionary algorithms \citep{deb2002nsga2,zhang2007moead}, generative models \citep{jin2020multiobjective,xie2021mars}, and benchmark suites such as GuacaMol \citep{brown2019guacamol}.
 These approaches typically optimize over a generative model's output space, proposing novel molecules that balance competing objectives.
 Our setting differs: the candidate pool is fixed, and the task is ranking (prioritization) rather than generation.
-Scalarization, Pareto, and lexicographic methods for multi-objective ranking have been studied in the broader optimization literature \citep{emmerich2018tutorial}, but their application to peptide candidate triage with multiple estimated endpoints is largely unexplored.
+Scalarization, Pareto, and lexicographic methods for multi-objective ranking have been studied in the broader optimization literature \citep{emmerich2018tutorial}, but their application to peptide candidate prioritization with multiple estimated endpoints is largely unexplored.
 
 \textbf{Peptide property prediction.}
 Computational tools for individual peptide properties are well-established: antimicrobial activity prediction \citep{veltri2018ampscanner}, toxicity prediction \citep{rathore2024toxinpred3}, and stability estimation \citep{sharma2014hlp}.
 Protein language models such as ESM-2 \citep{lin2023esm2} provide general-purpose sequence embeddings that improve downstream predictors.
 However, most tools predict a single endpoint; few address the joint ranking problem across multiple developability criteria.
-Learning-to-rank methods \citep{liu2009learningtorank,burges2010ranknet} offer a principled framework for combining multiple signals into a single ranking, but their application to peptide triage is unexplored.
+Learning-to-rank methods \citep{liu2009learningtorank,burges2010ranknet} offer a principled framework for combining multiple signals into a single ranking, but their application to peptide candidate prioritization is unexplored.
 
 \textbf{Autonomous ML research.}
 The autoresearch framework \citep{karpathy2026autoresearch} demonstrated that a language-model agent can iteratively improve a language model training script through autonomous code modification against a fixed evaluation harness.
@@ -19,5 +19,5 @@ Subsequent work has explored language-model-guided program search in broader con
 ML-Agent-Bench \citep{huang2024mlagentbench} provides a benchmark for evaluating language agents on ML experimentation tasks.
 Our companion paper \citep{wijaya2026autonomousagentdiscoversmolecular} applied the autoresearch paradigm to molecular transformer architecture search across SMILES, protein, and NLP domains with 3{,}106 experiments, finding that the value of architecture search is domain-dependent.
 
-This paper extends the autoresearch paradigm along two axes: from architecture search (single editable file, single metric) to ranking policy search (single editable file, multi-objective evaluation), and from language modeling to peptide candidate triage.
+This paper extends the autoresearch paradigm along two axes: from architecture search (single editable file, single metric) to ranking policy search (single editable file, multi-objective evaluation), and from language modeling to peptide candidate prioritization.
 The one-editable-file discipline and fixed-harness evaluation are preserved; the evaluation structure changes from scalar val\_bpb to a three-oracle ensemble.

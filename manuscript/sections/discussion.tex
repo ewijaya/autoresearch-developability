@@ -14,9 +14,9 @@ The agent escapes the linear scalarization policy class entirely: consensus voti
 This parallels findings from our companion paper \citep{wijaya2026autonomousagentdiscoversmolecular}, where the full agent achieved an 81\% improvement over random search on natural-language architecture tasks.
 
 \textbf{Agent search vs.\ NSGA-II.}
-NSGA-II \citep{deb2002nsga2} achieves the highest hypervolume (0.584) but the lowest top-$k$ enrichment among multi-objective strategies (0.444), reflecting a fundamental mismatch between its objective (Pareto spread) and the triage task (top-$k$ concentration).
+NSGA-II \citep{deb2002nsga2} achieves the highest hypervolume (0.584) but the lowest top-$k$ enrichment among multi-objective strategies (0.444), reflecting a fundamental mismatch between its objective (Pareto spread) and the prioritization task (top-$k$ concentration).
 NSGA-II is designed to maintain a diverse set of non-dominated solutions, not to identify a tight cluster of the best candidates \citep{emmerich2018tutorial}.
-For candidate triage where the budget permits validating ${\sim}$20 peptides, scalarization-based approaches that concentrate selections are better suited.
+For candidate prioritization where the budget permits validating ${\sim}$20 peptides, scalarization-based approaches that concentrate selections are better suited.
 
 \textbf{Limitations.}
 We identify seven limitations that scope the claims of this work:
