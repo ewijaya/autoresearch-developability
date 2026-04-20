@@ -6,7 +6,7 @@ We formalize the ranking problem, describe the public benchmark and evaluation h
 \subsection{Problem Formulation}
 \label{sec:problem}
 
-Given a pool of $N$ peptide candidates, each characterized by estimated scores for $K$ endpoints (activity, toxicity, stability, manufacturability), the goal is to learn a ranking policy $\pi$ that maps score vectors to a candidate ordering maximizing discovery utility under all constraints simultaneously.
+Given a pool of $N$ peptide candidates, each characterized by estimated scores for $K$ endpoints (activity, toxicity, stability, developability), the goal is to learn a ranking policy $\pi$ that maps score vectors to a candidate ordering maximizing discovery utility under all constraints simultaneously.
 Formally, let $\mathbf{x}_i = (a_i, t_i, s_i, d_i) \in \mathbb{R}^4$ denote the endpoint score vector for candidate $i$.
 A ranking policy $\pi: \mathbb{R}^{N \times 4} \to \mathcal{S}_N$ produces a permutation of candidates.
 The policy is evaluated by how well its top-$k$ selections overlap with ground-truth high-quality candidates defined by independent oracle functions (Section~\ref{sec:evaluation_harness}).

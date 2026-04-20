@@ -69,7 +69,7 @@ The harmonic mean of top-$k$ enrichment and NDCG on the loop's split progresses 
 \begin{figure}[t]
 \centering
 \includegraphics[width=\linewidth]{figures/fig2_loop_trajectory.pdf}
-\caption{Autoresearch loop trajectory over 100 experiments. Each point is one experiment; green triangles indicate kept improvements, gray circles indicate discarded regressions. The staircase line tracks the running best. The agent progresses through three structural phases: weight tuning (experiments 1--10), two-stage reranking (11--31), and oracle consensus voting with learned reranking (32--100).}
+\caption{Autoresearch loop trajectory over 100 experiments. Each point is one experiment; green triangles indicate kept improvements, gray circles indicate discarded regressions. The staircase line tracks the running best. The agent progresses through three structural phases: weight tuning (experiments 1--10), two-stage reranking (11--31), and oracle consensus voting with learned reranking (32--94, with no further improvements through experiment 100).}
 \label{fig:loop_trajectory}
 \end{figure}
 
@@ -81,11 +81,11 @@ Top-$k$ enrichment improves from 0.683 to 0.700.
 
 \textbf{Phase 2: Two-stage reranking} (experiments 11--31).
 The agent discovers that selecting a top-$k$ shortlist via weighted sum and reranking by a nonlinear threshold-gated score outperforms direct scalarization.
-It then introduces reciprocal rank fusion \citep{cormack2009rrf} across multiple scoring functions (threshold-gated, rank product, Pareto).
+It then introduces reciprocal rank fusion \citep{cormack2009rrf} across multiple heuristic scores (threshold-gated, rank product, Pareto).
 
 \textbf{Phase 3: Oracle consensus voting with learned models} (experiments 32--94).
 The agent introduces a consensus voting mechanism: candidates appearing in at least two of the three heuristic top-20 shortlists (threshold-gated, rank product, Pareto) are prioritized.
-This is equivalent to majority-vote ensemble selection across three independent ranking criteria.
+This is equivalent to majority-vote ensemble selection across three independent heuristic scores.
 Top-$k$ enrichment reaches 0.717.
 Subsequent experiments integrate LambdaMART \citep{ke2017lightgbm,burges2010ranknet} and MLP rerankers trained on oracle-aligned labels, with the final policy using a per-oracle MLP bottleneck score for shortlist reranking.
 

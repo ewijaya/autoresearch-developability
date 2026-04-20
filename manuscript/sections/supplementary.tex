@@ -4,14 +4,14 @@
 \subsection{Weight Sensitivity Analysis}
 \label{sec:weight_sensitivity}
 
-Figure~\ref{fig:weight_sensitivity} shows the result of systematic weight perturbation experiments from the manual loop phase (Phase 3, prior to the Codex loop).
-Each bar represents the change in top-$k$ enrichment when a single weight is perturbed from the optimized configuration.
-The analysis confirms that the manual-phase solution is a local optimum: all single-weight perturbations degrade performance.
+Figure~\ref{fig:weight_sensitivity} shows the result of systematic weight perturbation experiments on the hand-tuned baseline weights used as the Codex loop's starting configuration (experiment~1 in Table~\ref{tab:keeps}).
+Each bar represents the change in top-$k$ enrichment when a single weight is perturbed from the baseline configuration.
+The analysis confirms that the hand-tuned baseline is a local optimum: all single-weight perturbations degrade performance.
 
 \begin{figure}[h]
 \centering
 \includegraphics[width=0.85\linewidth]{figures/fig5_weight_sensitivity.pdf}
-\caption{Weight sensitivity analysis from the manual loop phase (Phase 3). Each bar shows the change in top-$k$ enrichment when a single scalarization weight is perturbed from the optimized values. All perturbations degrade performance, confirming a local optimum.}
+\caption{Weight sensitivity analysis on the hand-tuned baseline weights (experiment~1, the Codex loop's starting configuration). Each bar shows the change in top-$k$ enrichment when a single scalarization weight is perturbed from the baseline values. All perturbations degrade performance, confirming a local optimum.}
 \label{fig:weight_sensitivity}
 \end{figure}
 
@@ -35,7 +35,7 @@ Table~\ref{tab:keeps} lists all 12 kept experiments from the 100-experiment Code
 22 & 0.700 & 0.978 & 0.816 & Ensemble rerank: threshold-gated + rank-product \\
 26 & 0.700 & 0.979 & 0.816 & Reciprocal rank fusion of threshold-gated, rank-product, Pareto \\
 32 & 0.717 & 0.974 & 0.826 & Oracle consensus: $\geq$2-of-3 vote shortlist + RRF \\
-38 & 0.717 & 0.976 & 0.826 & Consensus + LambdaMART oracle score + RRF tie-break \\
+38 & 0.717 & 0.976 & 0.826 & Consensus + LambdaMART oracle-aligned score + RRF tie-break \\
 41 & 0.717 & 0.979 & 0.827 & Consensus reranked by RRF of LambdaMART + 3 heuristics \\
 61 & 0.717 & 0.980 & 0.828 & Consensus + MLP+LambdaMART ensemble filler \\
 65 & 0.717 & 0.980 & 0.828 & Final top-20 reranked by threshold-gated + learned tie-breaks \\
@@ -97,7 +97,7 @@ NSGA-II & --- & --- & --- & --- & --- & --- \\
 \end{table}
 
 The agent-improved policy achieves 0.850 on the threshold-gate oracle (vs.\ 0.600 for weighted sum) and 0.600 on the Pareto rank oracle (vs.\ 0.450 for weighted sum), but scores lower on the rank-product oracle (0.700 vs.\ 0.900).
-This trade-off across oracles reflects the consensus voting mechanism: by requiring agreement across multiple ranking criteria, the policy shifts emphasis toward candidates that score well under diverse definitions of quality.
+This trade-off across oracles reflects the consensus voting mechanism: by requiring agreement across multiple heuristic scores, the policy shifts emphasis toward candidates that score well under diverse definitions of quality.
 
 \subsection{Qualitative Examples}
 \label{sec:qualitative}

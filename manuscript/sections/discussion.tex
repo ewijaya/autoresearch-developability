@@ -4,7 +4,7 @@
 \textbf{What the loop discovered.}
 The agent's 12 kept modifications (11 improvements over the baseline) follow a clear structural trajectory.
 Early experiments adjust scalarization weights, a form of hyperparameter tuning within the initial policy class.
-Mid-loop experiments introduce two-stage reranking and reciprocal rank fusion \citep{cormack2009rrf}, combining multiple scoring functions into a consensus.
+Mid-loop experiments introduce two-stage reranking and reciprocal rank fusion \citep{cormack2009rrf}, combining multiple heuristic scores into a consensus.
 Late experiments add learned components (MLP, LambdaMART) trained on oracle-aligned labels.
 The agent independently discovered oracle consensus voting, prioritizing candidates that appear in at least two of three independent top-$k$ shortlists. This is a form of ensemble agreement selection that the authors did not pre-specify.
 

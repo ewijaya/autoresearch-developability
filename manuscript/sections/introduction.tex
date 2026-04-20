@@ -4,7 +4,7 @@
 Peptide drug programs are gated by triage.
 A typical campaign enters early discovery with thousands of in silico hits and a wet-lab budget that covers perhaps twenty.
 The cost of a bad shortlist is not a wasted assay plate; it is six months of a medicinal chemistry program spent validating candidates that a better ranking would have deprioritized on day one.
-Picking those twenty well requires weighing a portfolio of constraints simultaneously, since a peptide program that delivers on activity but fails on toxicity, stability, or manufacturability is not a lead \citep{yan2022review}.
+Picking those twenty well requires weighing a portfolio of constraints simultaneously, since a peptide program that delivers on activity but fails on toxicity, stability, or developability is not a lead \citep{yan2022review}.
 Most computational pipelines still score one endpoint at a time \citep{veltri2018ampscanner,rathore2024toxinpred3,sharma2014hlp} and defer the multi-objective judgment to a spreadsheet.
 The trade-offs are not imagined: highly active antimicrobial peptides tend to act through membrane disruption, a mechanism that is genuinely correlated with mammalian toxicity \citep{matsuzaki2009control}.
 Single-endpoint winners are often multi-endpoint losers.
@@ -22,7 +22,7 @@ Data, oracles, and metrics are read-only, so the agent can only improve by writi
 The loop design is borrowed from \citet{karpathy2026autoresearch} and applied in parallel to molecular model architectures in a companion study \citep{wijaya2026autonomousagentdiscoversmolecular}; here it is directed for the first time at peptide candidate triage.
 
 The benchmark is public and modest in scope.
-We assemble 3{,}554 antimicrobial peptides from DBAASP \citep{pirtskhalava2021dbaasp} with measured activity against \emph{E.~coli}, predicted toxicity from ToxinPred3 \citep{rathore2024toxinpred3}, predicted half-life from HLP \citep{sharma2014hlp}, and a rule-based manufacturability score.
+We assemble 3{,}554 antimicrobial peptides from DBAASP \citep{pirtskhalava2021dbaasp} with measured activity against \emph{E.~coli}, predicted toxicity from ToxinPred3 \citep{rathore2024toxinpred3}, predicted half-life from HLP \citep{sharma2014hlp}, and a rule-based developability score.
 The agent ran 100 experiments over roughly one laptop-day; 12 modifications passed the keep/discard gate.
 Its final policy combines an oracle consensus voting stage with a learned reranker \citep{burges2010ranknet,ke2017lightgbm}, but the practical point for a biotech reader is that this structure was discovered automatically rather than prescribed by the authors.
 
@@ -37,7 +37,7 @@ This paper contributes the following, framed in terms of what a peptide-program 
 The released ranking policy, evaluation harness, and loop infrastructure are designed to replace a weighted-scoring spreadsheet; swapping in an internal peptide library and in-house endpoint models requires changing only the data pipeline.
 
 \item \textbf{A public multi-objective AMP benchmark.}
-A set of 3{,}554 peptides scored across activity, toxicity, stability, and manufacturability, evaluated under three mathematically distinct oracle definitions, is released so other groups can benchmark their own triage methods on a common target.
+A set of 3{,}554 peptides scored across activity, toxicity, stability, and developability, evaluated under three mathematically distinct oracle definitions, is released so other groups can benchmark their own triage methods on a common target.
 
 \item \textbf{Evidence that automated policy search beats standard baselines on triage.}
 On this benchmark, the agent-derived policy outperforms NSGA-II and equal-weight scalarization on top-20 enrichment, with cross-split consistency across 10 random splits.
