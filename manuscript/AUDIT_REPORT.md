@@ -1,5 +1,5 @@
 # Manuscript Audit Report
-_Date: 2026-04-20 · Auditors: 6-Opus team_
+_Date: 2026-04-20_
 
 ## Summary
 
@@ -14,17 +14,17 @@ The manuscript is **nearly submission-ready from a mechanical standpoint** (clea
 - **Multiply-defined labels:** 0
 - **Overfull/underfull boxes:** 5 total (1 overfull hbox at methodology `tab:datasets` line 27–37, 18.1 pt too wide; 1 underfull vbox during output; 3 underfull hboxes — two in `reproducibility.tex` around the GitHub URL, one in `supplementary.tex:33–34` in the keeps-table description cell).
 - **Other notable warnings:** 1 `LaTeX Warning: 'h' float specifier changed to 'ht'` (supplementary `[h]` floats).
-- **Missing files:** none. All six figure PDFs resolve. `manuscript/tables/` directory is empty (all tables are inline `.tex`); noted by crossref-checker but not load-bearing.
+- **Missing files:** none. All six figure PDFs resolve. `manuscript/tables/` directory is empty (all tables are inline `.tex`); noted but not load-bearing.
 
 ## (a) Blocking issues
 
-1. **[TERMINOLOGY]** `sections/abstract.tex:6`, `sections/introduction.tex:7,25,40`, `sections/methodology.tex:9` — "manufacturability" is used as the name of the fourth endpoint in abstract/intro/problem-formulation, but the data table, all body prose in methodology/results/discussion, and the repository itself call it "developability" (and the underlying quantity is a rule-based developability penalty, not manufacturability). In biopharma these are **not synonyms**. Blocks: introduces an endpoint the reader cannot find in the tables/code. Fix: pick "developability" everywhere. _Jointly flagged by narrative-reviewer and terminology-reviewer._
+1. **[TERMINOLOGY]** `sections/abstract.tex:6`, `sections/introduction.tex:7,25,40`, `sections/methodology.tex:9` — "manufacturability" is used as the name of the fourth endpoint in abstract/intro/problem-formulation, but the data table, all body prose in methodology/results/discussion, and the repository itself call it "developability" (and the underlying quantity is a rule-based developability penalty, not manufacturability). In biopharma these are **not synonyms**. Blocks: introduces an endpoint the reader cannot find in the tables/code. Fix: pick "developability" everywhere.
 
 2. **[TERMINOLOGY]** `sections/methodology.tex:§5.3`, `sections/results.tex:84,87,88`, `sections/supplementary.tex:100` — The three formulas (threshold-gate, rank-product, Pareto) are variously called **oracle** (harness role), **scoring functions**, **heuristic**, and **ranking criteria**. The same three names describe two structurally different roles: ground-truth evaluation harness AND policy features (consensus voting stage). Blocks: readers cannot tell which "oracle" the agent sees vs. is evaluated against. Fix: reserve **oracle** for harness ground truth, **heuristic score** for policy-internal features.
 
 3. **[TERMINOLOGY]** `sections/supplementary.tex:38` — "LambdaMART oracle score" reads as an additional harness oracle but actually denotes a classifier trained to imitate the oracle. Blocks: compounds #2 above. Fix: rename to "LambdaMART oracle-aligned score" (consistent with `results.tex:90` and `discussion.tex:8`).
 
-4. **[CLAIM]** / **[CROSSREF]** `sections/results.tex:72` (figure caption, "32–100") vs. `sections/results.tex:86` (body, "32–94") — The Phase 3 boundary is inconsistent between the figure 2 caption and the body subsection header. Table `tab:keeps` confirms the last kept experiment is #94. Blocks: a reader who reads the caption and then Table 2 in the supplement will see an unresolved three-off. Fix: change caption to "32–94". _Confirmed by narrative-reviewer, claim-auditor, crossref-checker._
+4. **[CLAIM]** / **[CROSSREF]** `sections/results.tex:72` (figure caption, "32–100") vs. `sections/results.tex:86` (body, "32–94") — The Phase 3 boundary is inconsistent between the figure 2 caption and the body subsection header. Table `tab:keeps` confirms the last kept experiment is #94. Blocks: a reader who reads the caption and then Table 2 in the supplement will see an unresolved three-off. Fix: change caption to "32–94".
 
 5. **[NARRATIVE]** / **[CLAIM]** `sections/supplementary.tex:7,14` vs. `sections/results.tex:72,76,78,82,86` — "Phase 3" in the main text refers to Codex experiments 32–94, but `supplementary.tex` ("manual loop phase (Phase 3, prior to the Codex loop)") refers to a **different, undocumented "manual Phase 3"** preceding the Codex loop. Blocks: reviewers will conclude the pipeline has a hidden human-tuned stage that is not described in methodology. Fix: either rename the supplement's "manual Phase 3" or add a methodology subsection describing the manual pre-Codex loop.
 
@@ -36,7 +36,7 @@ The manuscript is **nearly submission-ready from a mechanical standpoint** (clea
 
 8. **[CLAIM]** `sections/introduction.tex:26` — "12 modifications passed the keep/discard gate" is off by one. Methodology (`methodology.tex:112`) and discussion (`discussion.tex:5`) correctly state 11 improvements over the baseline (the +1 baseline never passes a gate because it is the starting point). Fix: "11 modifications passed the keep/discard gate".
 
-9. **[CLAIM]** / **[TERMINOLOGY]** `sections/methodology.tex:34,54` — the caption and prose declare **7 penalties** but the enumeration lists only 6 (length, hydrophobic stretches, consecutive prolines, high net charge, high mean hydrophobicity, excess cysteines). Fix: either restore the seventh rule or change "7 penalties" to "6 penalties". _Flagged by claim-auditor._
+9. **[CLAIM]** / **[TERMINOLOGY]** `sections/methodology.tex:34,54` — the caption and prose declare **7 penalties** but the enumeration lists only 6 (length, hydrophobic stretches, consecutive prolines, high net charge, high mean hydrophobicity, excess cysteines). Fix: either restore the seventh rule or change "7 penalties" to "6 penalties".
 
 10. **[CLAIM]** `sections/results.tex:65` — loop split is n=533 but methodology (`methodology.tex:59`) reports train/val/test as 2,452/539/563, with no mention of n=533. Fix: one sentence in §4.2 or §5.2 explaining that the loop trajectory uses an earlier data split (before the final evaluation split was fixed at n=539).
 
@@ -104,7 +104,6 @@ The manuscript is **nearly submission-ready from a mechanical standpoint** (clea
 
 ## Preferred-term glossary
 
-_From terminology-reviewer (task #4)._
 
 | Term | Preferred usage |
 |---|---|
@@ -124,7 +123,6 @@ _From terminology-reviewer (task #4)._
 
 ## Per-figure reference count
 
-_From crossref-checker (task #5) plus independent verification._
 
 | Figure | Label | Referenced in | Count | Notes |
 |---|---|---|---|---|
@@ -139,7 +137,6 @@ All tables referenced: `tab:datasets` (1), `tab:strategies` (1), `tab:ablation` 
 
 ## Orphan bib entries
 
-_From citation-auditor (task #3) plus independent verification._
 
 | Key | File:line | Status |
 |---|---|---|
@@ -147,8 +144,3 @@ _From citation-auditor (task #3) plus independent verification._
 
 All other 27 bib entries are cited at least once. 31 `\cite*{}` call sites resolve, 27 unique keys, 0 broken keys.
 
----
-
-## Coordination note
-
-All five teammate tasks (#1 narrative-reviewer, #2 claim-auditor, #3 citation-auditor, #4 terminology-reviewer, #5 crossref-checker) completed and were relayed to this task by the orchestrator because their environments lacked TaskUpdate/SendMessage schemas. Their findings are folded into the lists above. The submission-lead independently re-verified: the clean LaTeX build, the bib orphan, the figure reference count, the Phase-3 caption/body discrepancy, and the manufacturability/developability split.
