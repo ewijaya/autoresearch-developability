@@ -1,38 +1,47 @@
 \section{Introduction}
 \label{sec:introduction}
 
-Peptide drug candidates must survive a portfolio of constraints before entering preclinical development: high activity against the biological target, low toxicity, adequate metabolic stability, and acceptable manufacturability \citep{yan2022review}.
-A peptide with potent antimicrobial activity but high predicted toxicity wastes downstream validation resources.
-Most computational approaches to peptide discovery optimize a single endpoint at a time \citep{veltri2018ampscanner,rathore2024toxinpred3,sharma2014hlp}, leaving the multi-objective trade-off to manual post-hoc filtering.
-Because endpoints often conflict (highly active peptides tend toward membrane-disrupting mechanisms that correlate with toxicity \citep{matsuzaki2009control}), single-endpoint optimization produces candidates that fail downstream.
+Peptide drug programs are gated by triage.
+A typical campaign enters early discovery with thousands of in silico hits and a wet-lab budget that covers perhaps twenty.
+The cost of a bad shortlist is not a wasted assay plate; it is six months of a medicinal chemistry program spent validating candidates that a better ranking would have deprioritized on day one.
+Picking those twenty well requires weighing a portfolio of constraints simultaneously, since a peptide program that delivers on activity but fails on toxicity, stability, or manufacturability is not a lead \citep{yan2022review}.
+Most computational pipelines still score one endpoint at a time \citep{veltri2018ampscanner,rathore2024toxinpred3,sharma2014hlp} and defer the multi-objective judgment to a spreadsheet.
+The trade-offs are not imagined: highly active antimicrobial peptides tend to act through membrane disruption, a mechanism that is genuinely correlated with mammalian toxicity \citep{matsuzaki2009control}.
+Single-endpoint winners are often multi-endpoint losers.
 
-Multi-objective optimization (MOO) methods such as NSGA-II \citep{deb2002nsga2} address this by seeking Pareto-optimal solutions across competing objectives.
-However, classical MOO methods optimize for Pareto spread (diversity across the frontier) rather than top-$k$ concentration (the best 20 candidates for wet-lab validation) \citep{emmerich2018tutorial}.
-In early-stage triage, where the objective is to prioritize a small number of candidates for expensive downstream assays, the desired output is a ranked shortlist, not a diverse Pareto front.
+The textbook response is multi-objective optimization.
+NSGA-II \citep{deb2002nsga2} and its descendants return a Pareto front: a diverse set of non-dominated compromises spread across the objective space \citep{emmerich2018tutorial}.
+That output shape is a mismatch for the triage decision a program director actually makes.
+Nobody needs a diverse frontier of 200 compromise peptides; they need the 20 candidates most likely to survive validation.
+In practice, most teams fall back on hand-tuned weighted-sum scoring in a spreadsheet, because it at least returns a ranked list.
+The weights are set by intuition, rarely revisited, and almost never audited against held-out data.
 
-The autoresearch framework \citep{karpathy2026autoresearch} demonstrated that an LLM agent can iteratively improve a system through a tight loop: read the current state, make one code modification, evaluate against a fixed harness, keep the change if it improves, otherwise revert.
-Our companion paper \citep{wijaya2026autonomousagentdiscoversmolecular} applied this paradigm to molecular transformer architecture search across SMILES, protein, and NLP domains, running 3{,}106 experiments and finding that the value of architecture search is domain-dependent.
-We adapt the same paradigm to a different problem: instead of optimizing a single metric (val\_bpb) by modifying a neural architecture, we optimize a multi-objective ranking policy for peptide candidate triage.
+We asked whether an LLM coding agent, given a frozen evaluation harness and a scored candidate pool, can learn a better ranking policy than the weighted sum a human team would write by hand.
+The agent (Codex, GPT-5.4) reads the current ranking policy, edits the code, runs the harness, and keeps the change only if the score improves; otherwise it reverts.
+Data, oracles, and metrics are read-only, so the agent can only improve by writing better ranking code, not by reshaping the test.
+The loop design is borrowed from \citet{karpathy2026autoresearch} and applied in parallel to molecular model architectures in a companion study \citep{wijaya2026autonomousagentdiscoversmolecular}; here it is directed for the first time at peptide candidate triage.
 
-We construct a public benchmark from DBAASP \citep{pirtskhalava2021dbaasp} (antimicrobial activity), ToxinPred3 \citep{rathore2024toxinpred3} (toxicity), HLP \citep{sharma2014hlp} (stability), and rule-based developability proxies.
-The evaluation harness uses a three-oracle ensemble (Pareto rank, rank product, and threshold-gated scoring) to prevent the agent from gaming any single metric definition.
-A Codex agent (GPT-5.4) runs 100 experiments, iteratively editing the ranking policy.
+The benchmark is public and modest in scope.
+We assemble 3{,}554 antimicrobial peptides from DBAASP \citep{pirtskhalava2021dbaasp} with measured activity against \emph{E.~coli}, predicted toxicity from ToxinPred3 \citep{rathore2024toxinpred3}, predicted half-life from HLP \citep{sharma2014hlp}, and a rule-based manufacturability score.
+The agent ran 100 experiments over roughly one laptop-day; 12 modifications passed the keep/discard gate.
+Its final policy combines an oracle consensus voting stage with a learned reranker \citep{burges2010ranknet,ke2017lightgbm}, but the practical point for a biotech reader is that this structure was discovered automatically rather than prescribed by the authors.
 
-The agent progresses from simple weight tuning to two-stage reranking to oracle consensus voting to learned MLP and LambdaMART \citep{burges2010ranknet,ke2017lightgbm} ensembles.
-The final policy achieves 0.650 top-$k$ enrichment (bootstrap 95\% CI [0.533, 0.767]) and 0.982 NDCG, outperforming NSGA-II (0.444) and best-of-1{,}000 random weight search (0.611).
+Success is measured by top-20 enrichment (the fraction of the truly best candidates that land in the agent's top-20 shortlist), averaged across three independent oracle definitions, with NDCG as a secondary metric and bootstrap confidence intervals over 10 random data splits.
+The agent-derived policy captures 65\% of the best candidates in its top-20, compared to 44\% for NSGA-II and 61\% for an equal-weight scalarization baseline.
+The margin over NSGA-II is large and its bootstrap confidence intervals are cleanly separated; the margin over weighted-sum is smaller, and we are honest about it: single-split confidence intervals overlap, while the cross-split mean separates consistently ($0.650 \pm 0.034$ vs.\ $0.585 \pm 0.050$ across 10 splits).
+All claims are on a public AMP benchmark; we are not making a clinical claim.
 
-This paper makes four contributions:
+This paper contributes the following, framed in terms of what a peptide-program reader gets:
 \begin{enumerate}[nosep]
-\item \textbf{Application of autoresearch-style loops to multi-objective peptide ranking.}
-We extend the autoresearch paradigm from single-metric architecture search to multi-objective ranking policy search, demonstrating that the loop can discover structural innovations (consensus voting, learned reranking) beyond hyperparameter tuning.
+\item \textbf{A drop-in triage layer for peptide programs.}
+The released ranking policy, evaluation harness, and loop infrastructure are designed to replace a weighted-scoring spreadsheet; swapping in an internal peptide library and in-house endpoint models requires changing only the data pipeline.
 
-\item \textbf{A public multi-objective peptide benchmark with three-oracle evaluation.}
-We assemble a benchmark of 3{,}554 antimicrobial peptides scored across four endpoints, evaluated against three mathematically distinct oracle definitions that resist reverse-engineering.
+\item \textbf{A public multi-objective AMP benchmark.}
+A set of 3{,}554 peptides scored across activity, toxicity, stability, and manufacturability, evaluated under three mathematically distinct oracle definitions, is released so other groups can benchmark their own triage methods on a common target.
 
-\item \textbf{Empirical comparison of autonomous policy search vs.\ standard MOO.}
-We show that the agent-improved policy outperforms NSGA-II and random weight search, with the improvement consistent across 10 independent data splits ($0.650 \pm 0.034$ vs.\ $0.585 \pm 0.050$ for equal-weight scalarization).
+\item \textbf{Evidence that automated policy search beats standard baselines on triage.}
+On this benchmark, the agent-derived policy outperforms NSGA-II and equal-weight scalarization on top-20 enrichment, with cross-split consistency across 10 random splits.
 
-\item \textbf{An open-source framework portable to proprietary peptide data.}
-The ranking policy, evaluation harness, and loop infrastructure are released as a reusable toolkit.
-The pipeline is designed for drop-in replacement of endpoint models and candidate pools.
+\item \textbf{The agent earned its keep beyond prompt-wrapped random search.}
+The final policy contains structural elements (oracle consensus voting plus a learned reranker) that neither the authors pre-specified nor a 1{,}000-sample random weight search could reach (0.650 vs.\ 0.611 top-20 enrichment), indicating that the loop is discovering policy structure, not just retuning weights.
 \end{enumerate}
