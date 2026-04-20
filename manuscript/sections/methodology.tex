@@ -28,7 +28,7 @@ We assemble a benchmark from four public data sources spanning complementary dev
 \toprule
 \textbf{Endpoint} & \textbf{Source} & \textbf{$N$} & \textbf{Type} & \textbf{Held-out} & \textbf{Notes} \\
 \midrule
-Activity & DBAASP v4 & 3{,}554 & Measured MIC & --- & $-\log_{10}$ potency \\
+Activity & DBAASP v3 & 3{,}554 & Measured MIC & --- & $-\log_{10}$ potency \\
 Toxicity & ToxinPred3 & 8{,}323 train & RF classifier & AUC 0.920 & 8.9\% overlap flagged \\
 Stability & HLP & 1{,}353 train & RF regressor & $R^2$ 0.547 & Weak; acknowledged \\
 Developability & Rule-based & --- & 7 penalties & Deterministic & Length, charge, hydrophobicity \\
@@ -37,7 +37,7 @@ Developability & Rule-based & --- & 7 penalties & Deterministic & Length, charge
 \end{table}
 
 \textbf{Activity.}
-Antimicrobial activity is derived from minimum inhibitory concentration (MIC) values in the Database of Antimicrobial Activity and Structure of Peptides (DBAASP v4) \citep{pirtskhalava2021dbaasp}, filtered to \emph{E.~coli} ATCC 25922 as target strain.
+Antimicrobial activity is derived from minimum inhibitory concentration (MIC) values in the Database of Antimicrobial Activity and Structure of Peptides (DBAASP v3) \citep{pirtskhalava2021dbaasp}, filtered to \emph{E.~coli} ATCC 25922 as target strain.
 Raw MIC values are converted to $-\log_{10}$ potency and min-max normalized to $[0, 1]$.
 This is the only ground-truth endpoint; the remaining three are estimated.
 
@@ -51,7 +51,7 @@ A random forest regressor is trained on peptide half-life data from HLP \citep{s
 Held-out $R^2$ is 0.547, substantially weaker than the toxicity model; this limitation propagates to any ranking policy that relies on stability scores.
 
 \textbf{Developability.}
-A deterministic rule-based proxy computes a penalty score from seven sequence-level rules: length outside 8--40 residues ($+1$), consecutive hydrophobic stretches ($+0.5$ per excess), consecutive prolines ($+0.5$), high net charge ($+1$), high mean hydrophobicity ($+1$), and excess cysteines ($+1$).
+A deterministic rule-based proxy computes a penalty score from seven sequence-level rules \citep{fjell2012peptidedev}: length outside 8--40 residues ($+1$), consecutive hydrophobic stretches ($+0.5$ per excess), consecutive prolines ($+0.5$), high net charge ($+1$), high mean hydrophobicity ($+1$), and excess cysteines ($+1$).
 The total penalty ranges from 0 (ideal) to ${\sim}3.5$ in practice.
 
 \textbf{Candidate pool statistics.}
@@ -122,6 +122,6 @@ We compare the agent-improved policy against seven baselines spanning simple heu
   \item \textbf{Weighted sum}: min-max normalize all four endpoints, combine with equal weights ($w = 0.25$ each).
   \item \textbf{Rule only}: hard-filter on toxicity $\leq 0.7$ and developability penalty $\leq 3$, rank by stability then activity.
   \item \textbf{Random}: uniformly random ordering (seed = 42).
-  \item \textbf{Random weight search}: best-of-1{,}000 Dirichlet-sampled weight vectors evaluated with the weighted-sum scalarization \citep{bergstra2012random}. This controls for blind exploration of the same policy class the agent starts from.
+  \item \textbf{Random weight search}: following the random-search-as-baseline paradigm \citep{bergstra2012random}, we sample 1{,}000 Dirichlet weight vectors and evaluate each with the weighted-sum scalarization. This controls for blind exploration of the same policy class the agent starts from.
   \item \textbf{NSGA-II} \citep{deb2002nsga2}: non-dominated sorting with crowding distance tie-break across all four objectives. This is the standard multi-objective optimization baseline.
 \end{itemize}
