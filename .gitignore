@@ -30,6 +30,7 @@ results/loops/*/prompt.txt
 results/run_all.log
 results/run_all_resumed.log
 results/analysis.log
+scripts/auto_commit.log
 !results/loops/**/results.tsv
 !results/loops/**/summary.json
 !results/loops/.gitkeep
