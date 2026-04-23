@@ -7,6 +7,8 @@ Non-technical summaries of the preprint *Agent-Guided Ranking Policy Improvement
 <!-- release: 2026-04-23 -->
 ## What the work is
 
+![Autoresearch loop trajectory: 100 autonomous experiments with 12 kept improvements, rising from an initial weighted-sum baseline to a final AI-designed ranking policy.](../results/figures/fig2_loop_trajectory.png)
+
 Six months ago I wrote the first weighted-sum scorer for our peptide triage. It took an afternoon. It wasn't very good.
 
 Today, the preprint describing what replaced it is live on bioRxiv.
@@ -28,6 +30,8 @@ If you're running peptide triage at your company, I'd like to compare notes.
 <!-- release: 2026-04-28 -->
 ## The result that surprised us
 
+![AI-designed ranking recipe (median 66%) beats best-of-1000 random weight search (62%), NSGA-II industry standard (43%), and random selection (4%) on the fraction of truly best candidates recovered in the top-20 shortlist, across 10 random data splits.](../results/figures/fig_headline_recall_at_20.png)
+
 When we started, I expected our AI-designed ranking recipe to beat a hand-tuned spreadsheet. That would have been a nice result.
 
 What I didn't expect was that it would also beat the field's textbook answer.
@@ -44,6 +48,8 @@ The lesson for anyone running a benchmark: check whether your optimizer's goal m
 
 <!-- release: 2026-05-01 -->
 ## What the agent built on its own
+
+![Over 100 experiments, the AI agent moved from weight tuning early on, to reciprocal rank fusion, to consensus voting, to learned reranking — each a structural idea, not a parameter tweak.](../results/figures/fig_trajectory_annotated.png)
 
 Here's the part of the project I still think about.
 
@@ -84,6 +90,8 @@ None of this makes the result less real. It does mean the right question isn't "
 
 <!-- release: 2026-05-12 -->
 ## For programs that want to pilot
+
+<!-- image: none embedded. For sharing, a screenshot of the repo's Quickstart block, or the top of the README, makes the integration feel concrete. Text-only is also fine for this closer. -->
 
 I've been writing about our peptide-triage paper for three weeks. Here's the practical end.
 
