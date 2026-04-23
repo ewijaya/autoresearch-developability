@@ -3,11 +3,9 @@
 **An AI agent that learns to pick the best peptide drug candidates by balancing activity, toxicity, stability, and manufacturability at the same time.**
 
 <p align="center">
-  <a href="https://doi.org/10.64898/2026.04.19.719536"><img src="https://img.shields.io/badge/bioRxiv-10.64898%2F2026.04.19.719536-b31b1b.svg" alt="bioRxiv preprint"></a>
+  <a href="https://www.biorxiv.org/content/10.64898/2026.04.19.719536"><img src="https://img.shields.io/badge/bioRxiv-10.64898%2F2026.04.19.719536-b31b1b.svg" alt="bioRxiv preprint"></a>
   <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/python-3.10%2B-blue.svg" alt="Python 3.10+"></a>
   <a href="#license"><img src="https://img.shields.io/badge/license-MIT-green.svg" alt="License: MIT"></a>
-  <img src="https://img.shields.io/badge/recall%4020-65%25-brightgreen.svg" alt="Recall@20: 65%">
-  <img src="https://img.shields.io/badge/agent%20loop-100%20experiments-8A2BE2.svg" alt="Agent loop: 100 experiments">
 </p>
 
 <p align="center">
@@ -15,7 +13,7 @@
 </p>
 <p align="center"><em>The AI agent ran 100 autonomous experiments and kept 12 improvements, progressing from simple weight tuning to consensus voting to learned reranking.</em></p>
 
-> 📄 **Preprint posted on bioRxiv (2026-04-23):** Wijaya, E. *Agent-Guided Ranking Policy Improvement for Peptide Drug Candidate Prioritization.* [doi.org/10.64898/2026.04.19.719536](https://doi.org/10.64898/2026.04.19.719536)
+> 📄 **Preprint posted on bioRxiv (2026-04-23):** Wijaya, E. *Agent-Guided Ranking Policy Improvement for Peptide Drug Candidate Prioritization.* [biorxiv.org/content/10.64898/2026.04.19.719536](https://www.biorxiv.org/content/10.64898/2026.04.19.719536)
 
 ## For biopharma teams
 
@@ -113,7 +111,21 @@ To pilot on your own data: see **Pilot it on your data** above, then edit `src/p
 
 A companion preprint reports the full methodology, baselines, ablations, and limitations:
 
-- **Wijaya, E.** (2026). *Agent-Guided Ranking Policy Improvement for Peptide Drug Candidate Prioritization.* bioRxiv. [doi.org/10.64898/2026.04.19.719536](https://doi.org/10.64898/2026.04.19.719536) · [v1 on bioRxiv](https://www.biorxiv.org/cgi/content/short/2026.04.19.719536v1) · local copy: `manuscript/main.pdf`.
+- **Wijaya, E.** (2026). *Agent-Guided Ranking Policy Improvement for Peptide Drug Candidate Prioritization.* bioRxiv. [biorxiv.org/content/10.64898/2026.04.19.719536](https://www.biorxiv.org/content/10.64898/2026.04.19.719536)
+
+### Citation
+
+```bibtex
+@article{wijaya2026agentguided,
+  author    = {Wijaya, Edward},
+  title     = {Agent-Guided Ranking Policy Improvement for Peptide Drug Candidate Prioritization},
+  journal   = {bioRxiv},
+  year      = {2026},
+  doi       = {10.64898/2026.04.19.719536},
+  publisher = {Cold Spring Harbor Laboratory},
+  url       = {https://www.biorxiv.org/content/10.64898/2026.04.19.719536},
+}
+```
 
 Prior art and data sources:
 
