@@ -91,7 +91,7 @@ None of this makes the result less real. It does mean the right question isn't "
 <!-- release: 2026-05-12 -->
 ## For programs that want to pilot
 
-<!-- image: none embedded. For sharing, a screenshot of the repo's Quickstart block, or the top of the README, makes the integration feel concrete. Text-only is also fine for this closer. -->
+![A diagram labeled "your infrastructure" encloses three modules inside a dashed boundary: a locked database of peptide data on the left, a ranking pipeline in the middle, and a numbered top-20 shortlist on the right. Data flows through without leaving the boundary.](../results/figures/fig_pilot_infrastructure_diagram.png)
 
 I've been writing about our peptide-triage paper for three weeks. Here's the practical end.
 
