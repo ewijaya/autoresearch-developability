@@ -105,7 +105,7 @@ A shortlist of top-20 candidates, with the policy that produced it, written to d
 
 The agent runs locally on your infrastructure. Your peptide sequences never leave your environment. The public-data pipeline we released is the worked example you swap out.
 
-If that sounds useful for your program, send me a message. I'm interested in a small number of pilots with teams already running peptide triage today.
+The pipeline and the integration instructions are in the repo.
 
 ---
 
