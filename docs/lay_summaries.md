@@ -93,8 +93,6 @@ None of this makes the result less real. It does mean the question worth asking 
 
 ![A diagram labeled "your infrastructure" encloses three modules inside a dashed boundary: a locked database of peptide data on the left, a ranking pipeline in the middle, and a numbered top-20 shortlist on the right. Data flows through without leaving the boundary.](../results/figures/fig_pilot_infrastructure_diagram.png)
 
-I've been writing about our peptide-triage paper for three weeks. Here's the practical end.
-
 If you run a peptide program with in-house scores for activity, toxicity, stability, and manufacturability, the pipeline we describe is designed to plug into your data with a swapped data loader. Nothing about the agent, the evaluation harness, or the ranking-recipe search needs to change. Only the input table does.
 
 What "plug into" looks like in practice:
