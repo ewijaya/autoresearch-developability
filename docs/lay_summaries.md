@@ -40,7 +40,7 @@ For multi-objective problems like peptide triage, NSGA-II is the standard method
 
 The AI-designed recipe gets 66%. On its worst split, it still beats NSGA-II's best split.
 
-This isn't NSGA-II being bad. It's NSGA-II being designed for the wrong goal. NSGA-II tries to spread candidates across the whole trade-off frontier, because for many problems you want to preserve diversity. But triage isn't about diversity. It's about picking the 20 candidates you'll actually spend lab money on. Concentrated beats diverse when you have a fixed budget.
+This isn't NSGA-II being bad. It's NSGA-II being designed for the wrong goal. NSGA-II tries to spread candidates across the whole trade-off frontier, because for many problems you want to preserve diversity. Triage doesn't reward diversity. It rewards picking the 20 candidates you'll actually spend lab money on. Concentrated beats diverse when you have a fixed budget.
 
 The lesson for anyone running a benchmark: check whether your optimizer's goal matches the decision you'll actually make with its output.
 
@@ -49,9 +49,9 @@ The lesson for anyone running a benchmark: check whether your optimizer's goal m
 <!-- release: 2026-05-01 -->
 ## What the agent built on its own
 
-![Over 100 experiments, the AI agent moved from weight tuning early on, to reciprocal rank fusion, to consensus voting, to learned reranking — each a structural idea, not a parameter tweak.](../results/figures/fig_trajectory_annotated.png)
+![Over 100 experiments, the AI agent moved from weight tuning early on, to reciprocal rank fusion, to consensus voting, to learned reranking: each a structural idea, not a parameter tweak.](../results/figures/fig_trajectory_annotated.png)
 
-Here's the part of the project I still think about.
+One part of the project I keep thinking about.
 
 We gave the AI agent one job: edit a peptide ranking recipe, keep changes that score better on held-out data. We expected weight-tuning. Adjust this coefficient, boost that feature, average a few scores.
 
@@ -82,9 +82,9 @@ The benchmark is antimicrobial peptides. We don't know yet how the method transf
 
 The AI agent runs offline. It doesn't see live assay results. It doesn't take actions. It proposes ranking recipes against a fixed scoring harness, and a human approves each kept change.
 
-The improvements are not guaranteed to transfer. The 65% number is on a public dataset. A proprietary library with different score distributions may behave differently, which is exactly why the pipeline was built to plug into internal data and re-learn.
+The improvements are not guaranteed to transfer. The 66% figure is on a public dataset. A proprietary library with different score distributions may behave differently, which is exactly why the pipeline was built to plug into internal data and re-learn.
 
-None of this makes the result less real. It does mean the right question isn't "can AI replace medicinal chemists." The right question is "can AI make the next 20 candidates you send to the lab more likely to work." That's a narrower claim and the one we tested.
+None of this makes the result less real. It does mean the question worth asking isn't whether AI can replace medicinal chemists. It's whether AI can make the next 20 candidates you send to the lab more likely to work. That's a narrower claim, and it's the one we tested.
 
 ---
 
