@@ -36,11 +36,11 @@ When we started, I expected our AI-designed ranking recipe to beat a hand-tuned 
 
 What I didn't expect was that it would also beat the field's textbook answer.
 
-For multi-objective problems like peptide triage, NSGA-II is the standard method taught in every optimization course. It's been the default for twenty years. Across 10 random data splits, it surfaces a median of 43% of the best candidates in the top-20 shortlist.
+For problems like peptide triage, the textbook answer is a 20-year-old algorithm called NSGA-II, designed to spread candidates evenly across the trade-off frontier. Across 10 random data splits, it surfaces a median of 43% of the best candidates in the top-20 shortlist.
 
 The AI-designed recipe gets 66%. On its worst split, it still beats NSGA-II's best split.
 
-This isn't NSGA-II being bad. It's NSGA-II being designed for the wrong goal. NSGA-II tries to spread candidates across the whole trade-off frontier, because for many problems you want to preserve diversity. Triage doesn't reward diversity. It rewards picking the 20 candidates you'll actually spend lab money on. Concentrated beats diverse when you have a fixed budget.
+This isn't the textbook method being bad. It's the textbook method being designed for the wrong goal. Spreading candidates evenly helps when you want to preserve diversity. Triage doesn't reward diversity. It rewards picking the 20 candidates you'll actually spend lab money on. Concentrated beats diverse when you have a fixed budget.
 
 The lesson for anyone running a benchmark: check whether your optimizer's goal matches the decision you'll actually make with its output.
 
