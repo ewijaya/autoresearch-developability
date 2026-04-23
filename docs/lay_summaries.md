@@ -17,7 +17,7 @@ We gave an AI agent one assignment: improve the ranking recipe one change at a t
 
 The loop is Andrej Karpathy's autoresearch idea (2026): let an agent edit code against a fixed scoring system. We pointed it at peptide triage.
 
-The result: 65% of the best candidates in the top-20 shortlist, versus 44% for the industry-standard approach. On a public benchmark of 3,554 antimicrobial peptides.
+The result: a median of 66% of the best candidates in the top-20 shortlist, versus 43% for the industry-standard approach, across 10 random data splits. On a public benchmark of 3,554 antimicrobial peptides.
 
 The pipeline plugs into a company's own candidate library. The paper uses public data; the code is built for proprietary programs.
 
@@ -32,9 +32,9 @@ When we started, I expected our AI-designed ranking recipe to beat a hand-tuned 
 
 What I didn't expect was that it would also beat the field's textbook answer.
 
-For multi-objective problems like peptide triage, NSGA-II is the standard method taught in every optimization course. It's been the default for twenty years. On our benchmark, it correctly surfaces 44% of the best candidates in the top-20 shortlist.
+For multi-objective problems like peptide triage, NSGA-II is the standard method taught in every optimization course. It's been the default for twenty years. Across 10 random data splits, it surfaces a median of 43% of the best candidates in the top-20 shortlist.
 
-The AI-designed recipe gets 65%.
+The AI-designed recipe gets 66%. On its worst split, it still beats NSGA-II's best split.
 
 This isn't NSGA-II being bad. It's NSGA-II being designed for the wrong goal. NSGA-II tries to spread candidates across the whole trade-off frontier, because for many problems you want to preserve diversity. But triage isn't about diversity. It's about picking the 20 candidates you'll actually spend lab money on. Concentrated beats diverse when you have a fixed budget.
 
