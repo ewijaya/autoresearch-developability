@@ -1,16 +1,17 @@
 # Lay summaries
 
-Non-technical summaries of the preprint *Agent-Guided Ranking Policy Improvement for Peptide Drug Candidate Prioritization* (bioRxiv, 2026), written for stakeholders who do not work in computational methods: executives, program leads, partners, and scientists outside the ML field.
-
-Each summary below addresses one aspect of the work and can stand alone.
+Non-technical summaries of the preprint *Agent-Guided Ranking Policy Improvement for Peptide Drug Candidate Prioritization* (bioRxiv, 2026), for readers outside computational methods: program leads, partners, and scientists in adjacent fields. Each summary stands alone.
 
 ---
 
-## 1. What the work is
+<!-- release: 2026-04-23 -->
+## What the work is
 
-A peptide drug program lives or dies on one question: which handful of candidates do you send to the lab?
+Six months ago I wrote the first weighted-sum scorer for our peptide triage. It took an afternoon. It wasn't very good.
 
-Picking wrong costs months. Good candidates have to balance four properties at once: they need to work, be safe, stay stable, and be manufacturable. Most tools handle one at a time.
+Today, the preprint describing what replaced it is live on bioRxiv.
+
+A peptide drug program lives or dies on one question: which handful of candidates do you send to the lab? Picking wrong costs months. Good candidates have to balance four properties at once: they need to work, be safe, stay stable, and be manufacturable. Most tools handle one at a time.
 
 We gave an AI agent one assignment: improve the ranking recipe one change at a time, and only keep changes that pick better candidates on held-out data. It ran 100 experiments and kept 12.
 
@@ -20,75 +21,85 @@ The result: 65% of the best candidates in the top-20 shortlist, versus 44% for t
 
 The pipeline plugs into a company's own candidate library. The paper uses public data; the code is built for proprietary programs.
 
+If you're running peptide triage at your company, I'd like to compare notes.
+
 ---
 
-## 2. The result, and why it surprised us
+<!-- release: 2026-04-28 -->
+## The result that surprised us
 
-Going in, the goal was modest: build a ranking recipe that beats a hand-tuned scoring spreadsheet. Most programs use some version of that spreadsheet today.
+When we started, I expected our AI-designed ranking recipe to beat a hand-tuned spreadsheet. That would have been a nice result.
 
-What we didn't expect was that the AI-designed recipe would also beat the field's textbook answer.
+What I didn't expect was that it would also beat the field's textbook answer.
 
-For multi-objective problems like peptide triage, NSGA-II is the standard method taught in every optimization course. It has been the default for twenty years. On our benchmark, it correctly surfaces 44% of the best candidates in the top-20 shortlist.
+For multi-objective problems like peptide triage, NSGA-II is the standard method taught in every optimization course. It's been the default for twenty years. On our benchmark, it correctly surfaces 44% of the best candidates in the top-20 shortlist.
 
 The AI-designed recipe gets 65%.
 
-This is not NSGA-II being bad. It is NSGA-II being designed for the wrong goal. The method tries to spread candidates across the whole trade-off frontier, because many problems reward diversity. But triage is not about diversity. It is about picking the 20 candidates a program will actually spend lab money on. Concentrated selection beats diverse exploration when the budget is fixed.
+This isn't NSGA-II being bad. It's NSGA-II being designed for the wrong goal. NSGA-II tries to spread candidates across the whole trade-off frontier, because for many problems you want to preserve diversity. But triage isn't about diversity. It's about picking the 20 candidates you'll actually spend lab money on. Concentrated beats diverse when you have a fixed budget.
 
-The lesson for anyone running a benchmark: check whether the optimizer's goal matches the decision that will actually be made with its output.
-
----
-
-## 3. What the agent built on its own
-
-The part of the project worth pausing on is what the agent did that nobody asked for.
-
-The setup was narrow. The agent could edit a peptide ranking recipe. It could keep a change only if the change scored better on held-out data. We expected weight-tuning: adjust this coefficient, boost that feature, average a few scores differently.
-
-That is what the first twenty experiments looked like. Then the behavior changed.
-
-- It began voting across multiple ranking criteria instead of averaging them.
-- It blended rank lists from different scoring methods using reciprocal rank fusion, a technique from search-engine research. That technique was not in the template.
-- By the end of the run, it was training small machine-learning models to re-rank its own shortlist.
-
-Of the 100 experiments the loop ran, 12 were kept. Three of those 12 were structural changes, not parameter tweaks. The agent had moved past the problem we posed and started solving the meta-problem: what kind of recipe works here at all.
-
-This is the practical argument for Karpathy's autoresearch framing. The loop is simple. The outcomes are not, because the space of changes is as large as the space of code the agent can write.
+The lesson for anyone running a benchmark: check whether your optimizer's goal matches the decision you'll actually make with its output.
 
 ---
 
-## 4. What the work is and is not
+<!-- release: 2026-05-01 -->
+## What the agent built on its own
 
-Limitations matter, in plain English, before anyone asks.
+Here's the part of the project I still think about.
 
-**This is not a drug-discovery system.** It ranks candidates a program already has. It does not invent new peptides.
+We gave the AI agent one job: edit a peptide ranking recipe, keep changes that score better on held-out data. We expected weight-tuning. Adjust this coefficient, boost that feature, average a few scores.
 
-**This is not a replacement for the lab.** The output is a shortlist to synthesize and assay. It is triage, not decision.
+That's what the first twenty experiments looked like. Then it started doing things I didn't ask for.
 
-**The benchmark is antimicrobial peptides.** Transfer to cyclic peptides, GLP-1 analogs, or oncology programs is untested. Peptide chemistry is not one field.
+It began voting across multiple ranking criteria instead of averaging them.
 
-**The AI agent runs offline.** It does not see live assay results. It does not take actions. It proposes ranking recipes against a fixed scoring harness, and a human approves each kept change.
+It blended rank lists from different scoring methods using reciprocal rank fusion, a trick from search-engine research that nobody had written into the template.
 
-**The improvements are not guaranteed to transfer.** The 65% figure is on a public dataset. A proprietary library with different score distributions may behave differently, which is exactly why the pipeline was built to plug into internal data and re-learn on it.
+By the end, it was training small machine-learning models to re-rank its own shortlist.
 
-None of this makes the result less real. It does mean the right question is not whether AI replaces medicinal chemists. The right question is whether AI can make the next 20 candidates a program sends to the lab more likely to work. That is a narrower claim and the one the paper tests.
+Three of the 100 experiments that got kept were structural ideas, not parameter tweaks. The agent had moved past the problem I posed and started solving the meta-problem: what kind of recipe works here at all.
+
+This is why Andrej Karpathy's autoresearch idea matters. The loop is simple (agent edits code, harness scores it, keep or revert). The outcomes are not, because the space of changes is as large as the space of code the agent can write.
 
 ---
 
-## 5. For programs that want to pilot
+<!-- release: 2026-05-06 -->
+## What this is and is not
 
-The practical end.
+The part of a paper people skip is the limitations section. Here's ours, in plain English, before anyone asks.
 
-For a peptide program with in-house scores for activity, toxicity, stability, and manufacturability, the pipeline described in the paper is designed to plug into internal data with a swapped data loader. Nothing about the agent, the evaluation harness, or the ranking-recipe search needs to change. Only the input table does.
+This is not a drug-discovery system. It ranks candidates your program already has. It doesn't invent new peptides.
 
-What integration looks like in practice:
+This is not a replacement for the lab. The output is a shortlist to synthesize and assay. It's triage, not decision.
 
-- One engineer, one to two weeks, to wire internal scoring into the expected input format.
-- A single command to launch the agent loop against the program's data.
-- A shortlist of top-20 candidates, with the policy that produced it, written to disk.
+The benchmark is antimicrobial peptides. We don't know yet how the method transfers to cyclic peptides, GLP-1 analogs, or oncology programs. Peptide chemistry is not one field.
 
-The agent runs locally. Peptide sequences never leave the program's environment. The public-data pipeline in the repository is the worked example that gets swapped out.
+The AI agent runs offline. It doesn't see live assay results. It doesn't take actions. It proposes ranking recipes against a fixed scoring harness, and a human approves each kept change.
 
-The author is interested in a small number of pilots with teams already running peptide triage today.
+The improvements are not guaranteed to transfer. The 65% number is on a public dataset. A proprietary library with different score distributions may behave differently, which is exactly why the pipeline was built to plug into internal data and re-learn.
+
+None of this makes the result less real. It does mean the right question isn't "can AI replace medicinal chemists." The right question is "can AI make the next 20 candidates you send to the lab more likely to work." That's a narrower claim and the one we tested.
+
+---
+
+<!-- release: 2026-05-12 -->
+## For programs that want to pilot
+
+I've been writing about our peptide-triage paper for three weeks. Here's the practical end.
+
+If you run a peptide program with in-house scores for activity, toxicity, stability, and manufacturability, the pipeline we describe is designed to plug into your data with a swapped data loader. Nothing about the agent, the evaluation harness, or the ranking-recipe search needs to change. Only the input table does.
+
+What "plug into" looks like in practice:
+
+One engineer, one to two weeks, to wire your internal scoring into the expected input format.
+
+A single command to launch the agent loop against your data.
+
+A shortlist of top-20 candidates, with the policy that produced it, written to disk.
+
+The agent runs locally on your infrastructure. Your peptide sequences never leave your environment. The public-data pipeline we released is the worked example you swap out.
+
+If that sounds useful for your program, send me a message. I'm interested in a small number of pilots with teams already running peptide triage today.
 
 ---
 
